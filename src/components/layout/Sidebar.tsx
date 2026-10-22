@@ -5,6 +5,10 @@ import {
   CheckCircle2, 
   Target, 
   ShieldCheck, 
+<<<<<<< HEAD
+=======
+  ShieldAlert,
+>>>>>>> origin/main
   History, 
   Terminal, 
   Sparkles,
@@ -36,6 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'analyze' as ActiveTab, label: 'Compare a Resume', icon: FileSearch },
     { id: 'results' as ActiveTab, label: 'Results', icon: CheckCircle2 },
     { id: 'ats-checker' as ActiveTab, label: 'ATS Check', icon: ShieldCheck },
+<<<<<<< HEAD
+=======
+    { id: 'security' as ActiveTab, label: 'Resume Security', icon: ShieldAlert },
+>>>>>>> origin/main
     { id: 'skills' as ActiveTab, label: 'Skill Gaps', icon: Target },
     { id: 'dictionary' as ActiveTab, label: 'Skills List', icon: BookOpen },
     { id: 'history' as ActiveTab, label: 'Past Comparisons', icon: History, count: savedCount },

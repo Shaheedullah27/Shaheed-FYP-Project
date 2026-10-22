@@ -1,0 +1,92 @@
+{
+  "Programming Languages": [
+    { "name": "Python", "aliases": ["python3", "py"] },
+    { "name": "JavaScript", "aliases": ["js", "ecmascript"] },
+    { "name": "TypeScript", "aliases": ["ts"] },
+    { "name": "Java", "aliases": ["jdk", "core java"] },
+    { "name": "C++", "aliases": ["cpp", "c plus plus"] },
+    { "name": "C#", "aliases": ["csharp", ".net"] },
+    { "name": "Go", "aliases": ["golang"] },
+    { "name": "Rust", "aliases": [] },
+    { "name": "PHP", "aliases": [] },
+    { "name": "Ruby", "aliases": [] },
+    { "name": "Swift", "aliases": [] },
+    { "name": "Kotlin", "aliases": [] },
+    { "name": "R", "aliases": ["r-lang"] },
+    { "name": "Bash", "aliases": ["shell scripting", "sh", "zsh"] }
+  ],
+  "Databases & Storage": [
+    { "name": "SQL", "aliases": ["structured query language"] },
+    { "name": "PostgreSQL", "aliases": ["postgres"] },
+    { "name": "MySQL", "aliases": [] },
+    { "name": "MongoDB", "aliases": ["mongo", "nosql"] },
+    { "name": "Redis", "aliases": ["caching", "in-memory database"] },
+    { "name": "SQLite", "aliases": [] },
+    { "name": "Firebase", "aliases": ["firestore"] },
+    { "name": "Elasticsearch", "aliases": ["elk"] },
+    { "name": "DynamoDB", "aliases": [] },
+    { "name": "Oracle Database", "aliases": ["pl/sql", "oracle sql"] }
+  ],
+  "Web Development": [
+    { "name": "React", "aliases": ["reactjs", "react.js"] },
+    { "name": "Node.js", "aliases": ["nodejs", "node"] },
+    { "name": "Express.js", "aliases": ["express", "expressjs"] },
+    { "name": "HTML5", "aliases": ["html"] },
+    { "name": "CSS3", "aliases": ["css", "scss", "sass"] },
+    { "name": "Next.js", "aliases": ["nextjs"] },
+    { "name": "Vue.js", "aliases": ["vue", "vuejs"] },
+    { "name": "Angular", "aliases": ["angularjs"] },
+    { "name": "Django", "aliases": [] },
+    { "name": "Flask", "aliases": [] },
+    { "name": "FastAPI", "aliases": [] },
+    { "name": "Tailwind CSS", "aliases": ["tailwind"] },
+    { "name": "REST APIs", "aliases": ["restful api", "rest api", "web apis"] },
+    { "name": "GraphQL", "aliases": [] }
+  ],
+  "Project Management": [
+    { "name": "Agile", "aliases": ["agile methodology"] },
+    { "name": "Scrum", "aliases": ["scrum master", "daily standups"] },
+    { "name": "Jira", "aliases": ["atlassian jira"] },
+    { "name": "Kanban", "aliases": [] },
+    { "name": "Sprint Planning", "aliases": ["sprints", "backlog grooming"] },
+    { "name": "Risk Management", "aliases": ["risk assessment"] },
+    { "name": "Stakeholder Management", "aliases": ["stakeholder communication"] },
+    { "name": "Product Roadmap", "aliases": ["roadmap planning", "feature prioritization"] },
+    { "name": "PMP", "aliases": ["project management professional"] },
+    { "name": "Confluence", "aliases": [] },
+    { "name": "Trello", "aliases": [] }
+  ],
+  "Marketing & Analytics": [
+    { "name": "SEO", "aliases": ["search engine optimization", "on-page seo"] },
+    { "name": "SEM & PPC", "aliases": ["google ads", "paid search", "pay per click"] },
+    { "name": "Google Analytics", "aliases": ["ga4", "web analytics"] },
+    { "name": "Content Strategy", "aliases": ["content marketing", "content creation"] },
+    { "name": "Copywriting", "aliases": ["ad copywriting", "technical writing"] },
+    { "name": "Social Media Marketing", "aliases": ["smm", "social campaigns"] },
+    { "name": "Email Marketing", "aliases": ["mailchimp", "newsletter campaigns"] },
+    { "name": "Conversion Rate Optimization", "aliases": ["cro", "a/b testing"] },
+    { "name": "Market Research", "aliases": ["competitive analysis", "user research"] },
+    { "name": "CRM", "aliases": ["hubspot", "salesforce"] }
+  ],
+  "Communication & Interpersonal": [
+    { "name": "Written Communication", "aliases": ["business writing", "documentation"] },
+    { "name": "Verbal Communication", "aliases": ["oral communication", "presentation skills"] },
+    { "name": "Cross-Functional Collaboration", "aliases": ["interdepartmental collaboration", "teamwork"] },
+    { "name": "Problem Solving", "aliases": ["troubleshooting", "analytical thinking"] },
+    { "name": "Active Listening", "aliases": [] },
+    { "name": "Negotiation", "aliases": ["consensus building"] },
+    { "name": "Conflict Resolution", "aliases": [] },
+    { "name": "Public Speaking", "aliases": ["client presentation", "keynote"] },
+    { "name": "Mentorship", "aliases": ["coaching", "peer mentoring"] }
+  ],
+  "Cloud & DevOps": [
+    { "name": "AWS", "aliases": ["amazon web services", "ec2", "s3", "lambda"] },
+    { "name": "Docker", "aliases": ["containerization", "containers"] },
+    { "name": "Kubernetes", "aliases": ["k8s"] },
+    { "name": "CI/CD", "aliases": ["continuous integration", "github actions", "gitlab ci"] },
+    { "name": "Terraform", "aliases": ["iac", "infrastructure as code"] },
+    { "name": "Linux", "aliases": ["unix", "ubuntu"] },
+    { "name": "Git", "aliases": ["github", "gitlab", "version control"] },
+    { "name": "Unit Testing", "aliases": ["jest", "pytest", "test automation"] }
+  ]
+}

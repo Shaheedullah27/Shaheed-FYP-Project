@@ -161,6 +161,10 @@ export type ActiveTab =
   | 'results' 
   | 'skills' 
   | 'ats-checker'
+<<<<<<< HEAD
+=======
+  | 'security'
+>>>>>>> origin/main
   | 'history' 
   | 'dictionary'
   | 'backend-guide'
@@ -174,3 +178,100 @@ export interface SampleDocument {
   text: string;
   skillsCount: number;
 }
+<<<<<<< HEAD
+=======
+
+export type SecuritySeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type SecurityConfidence = 'VERIFIED' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type QuarantineStatus = 'NOT_QUARANTINED' | 'FLAGGED_FOR_REVIEW' | 'QUARANTINED' | 'CLEARED' | 'REJECTED';
+export type ReviewerStatus = 'unreviewed' | 'under_review' | 'confirmed' | 'false_positive' | 'cleared';
+
+export interface SecurityFinding {
+  id: string;
+  inspection_id: string;
+  resume_id?: string;
+  rule_id: string;
+  category: string;
+  severity: SecuritySeverity;
+  confidence: SecurityConfidence;
+  title: string;
+  description: string;
+  snippet: string;
+  page_number: number;
+  bbox?: number[];
+  font_name?: string;
+  font_size?: number;
+  font_color?: string;
+  background_color?: string;
+  visibility_evidence?: string;
+  reviewer_status: ReviewerStatus;
+  reviewer_notes?: string;
+  created_at: string;
+  filename?: string;
+  candidate_name?: string;
+  job_title?: string;
+  quarantine_status?: QuarantineStatus;
+  risk_level?: string;
+  detection_details?: Record<string, any>;
+  completed_steps?: string[];
+  failed_steps?: string[];
+}
+
+export interface SecuritySummary {
+  total_inspected: number;
+  clean_count: number;
+  flagged_count: number;
+  quarantined_count: number;
+  critical_high_count: number;
+  incomplete_count: number;
+  recent_alerts: Array<{
+    id: string;
+    inspection_id: string;
+    rule_id: string;
+    title: string;
+    severity: SecuritySeverity;
+    confidence: SecurityConfidence;
+    snippet: string;
+    page_number: number;
+    filename: string;
+    candidate_name: string;
+    quarantine_status: QuarantineStatus;
+    created_at: string;
+  }>;
+}
+
+export interface SecurityInspection {
+  id: string;
+  resume_id: string;
+  filename: string;
+  file_type: string;
+  candidate_name: string;
+  job_title: string;
+  inspection_status: 'completed' | 'incomplete' | 'failed';
+  risk_level: 'CLEAN' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  quarantine_status: QuarantineStatus;
+  total_findings: number;
+  critical_findings: number;
+  high_findings: number;
+  medium_findings: number;
+  low_findings: number;
+  completed_steps: string[];
+  failed_steps: string[];
+  summary_notes: string;
+  created_at: string;
+  updated_at: string;
+  findings?: SecurityFinding[];
+}
+
+export interface SecurityAuditLogEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  reason?: string;
+  details_json?: string;
+}
+
+>>>>>>> origin/main

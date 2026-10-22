@@ -21,6 +21,10 @@ const TAB_TITLES: Record<ActiveTab, { title: string; breadcrumb: string }> = {
   'results': { title: 'Comparison Results', breadcrumb: 'Results' },
   'skills': { title: 'Skill Gaps', breadcrumb: 'Skills' },
   'ats-checker': { title: 'ATS Check', breadcrumb: 'ATS Check' },
+<<<<<<< HEAD
+=======
+  'security': { title: 'Resume Security & Quarantine', breadcrumb: 'Security & Forensics' },
+>>>>>>> origin/main
   'dictionary': { title: 'Skills List', breadcrumb: 'Skills List' },
   'history': { title: 'Past Comparisons', breadcrumb: 'History' },
   'backend-guide': { title: 'How the App Works', breadcrumb: 'How it works' },
