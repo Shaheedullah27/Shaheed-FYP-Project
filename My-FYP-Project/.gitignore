@@ -1,9 +1,0 @@
-node_modules/
-backend/venv*/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
