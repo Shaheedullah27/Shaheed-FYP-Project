@@ -26,20 +26,20 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
   return (
     <div className="flex flex-col items-center justify-center p-8 panel max-w-md mx-auto text-center">
       <div className="relative mb-5">
-        <div className="w-14 h-14 rounded-full border-3 border-white/10 border-t-[#35E7FF] animate-spin" />
+        <div className="w-14 h-14 rounded-full border-3 border-white/10 border-t-[#79F2C0] animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 text-[#7DEFFF] animate-pulse" />
+          <Loader2 className="w-6 h-6 text-[#79F2C0] animate-pulse" />
         </div>
       </div>
 
-      <h3 className="text-base font-bold text-ink mb-1">
+      <h3 className="text-base font-heading font-bold text-porcelain mb-1">
         {message || 'Comparing your resume and the job posting'}
       </h3>
-      <p className="text-xs text-mute mb-6">
+      <p className="text-xs text-silver mb-6">
         This may take a few seconds.
       </p>
 
-      <div className="w-full space-y-2.5 text-left border-t border-white/8 pt-4">
+      <div className="w-full space-y-2.5 text-left border-t border-white/[0.08] pt-4">
         {STEPS.map((step, idx) => {
           const isDone = idx < currentStep;
           const isCurrent = idx === currentStep;
@@ -49,14 +49,14 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
             <div 
               key={idx}
               className={`flex items-center gap-3 text-xs transition-opacity duration-200 ${
-                isDone ? 'text-emerald-300 font-medium' : isCurrent ? 'text-[#7DEFFF] font-semibold' : 'text-mute/80'
+                isDone ? 'text-[#79F2C0] font-medium' : isCurrent ? 'text-[#62D9F5] font-semibold' : 'text-silver/60'
               }`}
             >
               <div className="w-4 h-4 flex items-center justify-center shrink-0">
                 {isDone ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <CheckCircle2 className="w-4 h-4 text-[#79F2C0]" />
                 ) : (
-                  <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'animate-pulse' : ''}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'animate-pulse text-[#62D9F5]' : 'text-silver/60'}`} />
                 )}
               </div>
               <span className="truncate">{step.label}</span>

@@ -159,14 +159,14 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
-          <div className="flex items-center gap-2 text-[11px] font-semibold text-[#7DEFFF] mb-1.5">
+          <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.12em] text-[#79F2C0] mb-1.5">
             <FileCheck className="w-3.5 h-3.5" />
-            <span className="uppercase tracking-[0.12em]">Match studio</span>
+            <span>Match Studio</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-grad">
+          <h1 className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-porcelain">
             Compare a resume with a job posting
           </h1>
-          <p className="text-xs text-mute mt-1">
+          <p className="text-xs text-silver mt-1">
             Upload a resume or paste its text, then paste the job posting. We’ll compare the wording and skills.
           </p>
         </div>
@@ -177,8 +177,8 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
             onClick={() => setShowOptions(!showOptions)}
             aria-expanded={showOptions}
             className={cn(
-              'btn-ghost px-3 py-2 text-xs',
-              showOptions && 'border-[#35E7FF]/45 text-[#7DEFFF] bg-[#35E7FF]/8'
+              'btn-ghost px-3 py-2 text-xs cursor-pointer',
+              showOptions && 'border-[#79F2C0]/40 text-[#79F2C0] bg-[#79F2C0]/10'
             )}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -193,18 +193,18 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
           role="alert"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-rose-500/10 border border-rose-400/30 rounded-xl flex items-start gap-3 text-xs text-rose-200"
+          className="p-4 bg-[#FF777F]/10 border border-[#FF777F]/30 rounded-xl flex items-start gap-3 text-xs text-[#FF777F]"
         >
-          <AlertCircle className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
+          <AlertCircle className="w-4 h-4 text-[#FF777F] shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="font-bold block mb-0.5 text-rose-100">Please check your text</span>
-            <span>{validationError}</span>
+            <span className="font-bold block mb-0.5 text-porcelain">Please check your text</span>
+            <span className="text-silver">{validationError}</span>
           </div>
           <button
             type="button"
             onClick={() => setValidationError(null)}
             aria-label="Dismiss error"
-            className="text-rose-200 hover:text-white font-bold ml-2"
+            className="text-[#FF777F] hover:text-white font-bold ml-2 cursor-pointer"
           >
             ×
           </button>
@@ -230,16 +230,16 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                   type="checkbox"
                   checked={includeBigrams}
                   onChange={(e) => setIncludeBigrams(e.target.checked)}
-                  className="rounded border-white/20 bg-[#070B14] text-[#35E7FF] focus:ring-[#35E7FF]/40"
+                  className="rounded border-white/20 bg-[#0B0D12] text-[#79F2C0] focus:ring-[#79F2C0]/40"
                 />
                 <span>Compare single words and two-word phrases</span>
               </label>
-              <label className="flex items-center gap-2.5 cursor-pointer text-mute hover:text-ink transition-colors">
+              <label className="flex items-center gap-2.5 cursor-pointer text-silver hover:text-porcelain transition-colors">
                 <input
                   type="checkbox"
                   checked={filterStopwords}
                   onChange={(e) => setFilterStopwords(e.target.checked)}
-                  className="rounded border-white/20 bg-[#070B14] text-[#35E7FF] focus:ring-[#35E7FF]/40"
+                  className="rounded border-white/20 bg-[#0B0D12] text-[#79F2C0] focus:ring-[#79F2C0]/40"
                 />
                 <span>Ignore common words such as “the” and “and”</span>
               </label>
@@ -256,15 +256,15 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
             <GlowPanel glow className="p-5 h-full flex flex-col">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-[#35E7FF]/10 border border-[#35E7FF]/25 text-[#7DEFFF]">
+                  <div className="p-2 rounded-lg bg-[#79F2C0]/10 border border-[#79F2C0]/25 text-[#79F2C0]">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-ink">Your resume</h2>
-                    <span className="text-[11px] text-mute">Upload a file or paste the text</span>
+                    <h2 className="text-sm font-heading font-bold text-porcelain">Your resume</h2>
+                    <span className="text-[11px] text-silver">Upload a file or paste the text</span>
                   </div>
                 </div>
-                <div className="text-[11px] font-mono tabular-nums text-mute px-2 py-1 rounded-md bg-white/5 border border-white/10">
+                <div className="text-[11px] font-mono tabular-nums text-silver px-2 py-1 rounded-md bg-white/5 border border-white/10">
                   {resumeWordCount} words
                 </div>
               </div>
@@ -272,7 +272,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
               {/* Title & Preset Bar */}
               <div className="space-y-3 mb-4">
                 <div>
-                  <label htmlFor="resume-title" className="block text-[11px] font-semibold text-mute mb-1.5">
+                  <label htmlFor="resume-title" className="block text-[11px] font-medium text-silver mb-1.5">
                     Resume name
                   </label>
                   <input
@@ -286,14 +286,14 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                 </div>
 
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-[11px] text-mute pt-1">Sample resumes:</span>
+                  <span className="text-[11px] text-silver pt-1">Sample resumes:</span>
                   <div className="flex items-center gap-1.5 flex-wrap justify-end">
                     {SAMPLE_RESUMES.map((res) => (
                       <button
                         key={res.id}
                         type="button"
                         onClick={() => handleSelectSampleResume(res.id)}
-                        className="px-2.5 py-1 text-[11px] font-medium text-mute bg-white/5 border border-white/10 hover:text-ink hover:border-[#35E7FF]/40 hover:bg-[#35E7FF]/8 rounded-md transition-all"
+                        className="px-2.5 py-1 text-[11px] font-medium text-silver bg-white/5 border border-white/10 hover:text-porcelain hover:border-[#79F2C0]/40 hover:bg-[#79F2C0]/10 rounded-md transition-all cursor-pointer"
                       >
                         {res.role}
                       </button>
@@ -318,10 +318,10 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                 }}
                 aria-label="Upload a resume file"
                 className={cn(
-                  'relative rounded-xl border-2 border-dashed p-4 text-center cursor-pointer mb-3 transition-all duration-200',
+                  'relative rounded-xl border-2 border-dashed p-5 text-center cursor-pointer mb-3 transition-all duration-200',
                   isDragOver
-                    ? 'border-[#35E7FF] bg-[#35E7FF]/8 shadow-[0_0_38px_-8px_rgba(53,231,255,0.6)] scale-[1.01]'
-                    : 'border-white/15 bg-white/[0.03] hover:border-[#35E7FF]/50 hover:bg-white/[0.05]'
+                    ? 'border-[#79F2C0] bg-[#79F2C0]/10 shadow-[0_0_32px_-6px_rgba(121,242,192,0.4)] scale-[1.01]'
+                    : 'border-white/[0.12] bg-[#131720]/70 hover:border-[#79F2C0]/50 hover:bg-[#131720]'
                 )}
               >
                 <input
@@ -334,25 +334,25 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                 <div className="flex flex-col items-center justify-center gap-2">
                   <div
                     className={cn(
-                      'w-9 h-9 rounded-lg flex items-center justify-center border transition-colors',
+                      'w-10 h-10 rounded-lg flex items-center justify-center border transition-colors',
                       isDragOver
-                        ? 'bg-[#35E7FF]/20 border-[#35E7FF]/50 text-[#7DEFFF]'
-                        : 'bg-white/5 border-white/10 text-[#7DEFFF]'
+                        ? 'bg-[#79F2C0]/20 border-[#79F2C0]/50 text-[#79F2C0]'
+                        : 'bg-white/5 border-white/10 text-[#79F2C0]'
                     )}
                   >
                     {isParsingFile ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#79F2C0]" />
                     ) : (
-                      <Upload className="w-4 h-4" />
+                      <Upload className="w-4 h-4 text-[#79F2C0]" />
                     )}
                   </div>
-                  <div className="text-xs text-mute">
+                  <div className="text-xs text-silver">
                     {isParsingFile ? (
-                      <span className="text-ink font-semibold">Reading your file…</span>
+                      <span className="text-porcelain font-semibold">Reading document…</span>
                     ) : (
                       <>
-                        Drop a file here or{' '}
-                        <span className="font-semibold text-[#7DEFFF]">choose a file</span>
+                        Drop resume here or{' '}
+                        <span className="font-semibold text-[#79F2C0]">browse file</span>
                       </>
                     )}
                   </div>
@@ -360,12 +360,12 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                     {['PDF', 'DOCX', 'TXT'].map((fmt) => (
                       <span
                         key={fmt}
-                        className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-white/12 bg-white/5 text-mute"
+                        className="text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded border border-white/12 bg-white/5 text-silver"
                       >
                         {fmt}
                       </span>
                     ))}
-                    <span className="text-[9px] text-mute/70">up to 10 MB</span>
+                    <span className="text-[9px] text-silver/60">up to 10 MB</span>
                   </div>
                 </div>
               </div>
@@ -438,15 +438,15 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
             <GlowPanel glow className="p-5 h-full flex flex-col">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-[#8B5CFF]/12 border border-[#8B5CFF]/30 text-[#C4B5FD]">
+                  <div className="p-2 rounded-lg bg-[#62D9F5]/10 border border-[#62D9F5]/25 text-[#62D9F5]">
                     <Briefcase className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-ink">Job posting</h2>
-                    <span className="text-[11px] text-mute">The role and its requirements</span>
+                    <h2 className="text-sm font-heading font-bold text-porcelain">Job posting</h2>
+                    <span className="text-[11px] text-silver">The role and its requirements</span>
                   </div>
                 </div>
-                <div className="text-[11px] font-mono tabular-nums text-mute px-2 py-1 rounded-md bg-white/5 border border-white/10">
+                <div className="text-[11px] font-mono tabular-nums text-silver px-2 py-1 rounded-md bg-white/5 border border-white/10">
                   {jdWordCount} words
                 </div>
               </div>
@@ -455,7 +455,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
               <div className="space-y-3 mb-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label htmlFor="job-title" className="block text-[11px] font-semibold text-mute mb-1.5">
+                    <label htmlFor="job-title" className="block text-[11px] font-medium text-silver mb-1.5">
                       Job title
                     </label>
                     <input
@@ -468,7 +468,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                     />
                   </div>
                   <div>
-                    <label htmlFor="company-name" className="block text-[11px] font-semibold text-mute mb-1.5">
+                    <label htmlFor="company-name" className="block text-[11px] font-medium text-silver mb-1.5">
                       Company Name
                     </label>
                     <input
@@ -483,14 +483,14 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                 </div>
 
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-[11px] text-mute pt-1">Sample job postings:</span>
+                  <span className="text-[11px] text-silver pt-1">Sample job postings:</span>
                   <div className="flex items-center gap-1.5 flex-wrap justify-end">
                     {SAMPLE_JOB_DESCRIPTIONS.map((jd) => (
                       <button
                         key={jd.id}
                         type="button"
                         onClick={() => handleSelectSampleJd(jd.id)}
-                        className="px-2.5 py-1 text-[11px] font-medium text-mute bg-white/5 border border-white/10 hover:text-ink hover:border-[#8B5CFF]/50 hover:bg-[#8B5CFF]/10 rounded-md transition-all"
+                        className="px-2.5 py-1 text-[11px] font-medium text-silver bg-white/5 border border-white/10 hover:text-porcelain hover:border-[#62D9F5]/40 hover:bg-[#62D9F5]/10 rounded-md transition-all cursor-pointer"
                       >
                         {jd.role}
                       </button>
@@ -533,9 +533,9 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         {/* Action Row */}
         <motion.div variants={riseIn}>
           <GlowPanel glow className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 text-xs text-mute">
-              <Info className="w-4 h-4 text-[#7DEFFF] shrink-0" />
-              <span>These scores are guidance, not a prediction of whether you’ll get the job.</span>
+            <div className="flex items-center gap-2.5 text-xs text-silver">
+              <Info className="w-4 h-4 text-[#62D9F5] shrink-0" />
+              <span>These scores provide alignment guidance, not an automated hiring probability.</span>
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">

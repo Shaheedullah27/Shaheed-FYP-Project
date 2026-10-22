@@ -121,41 +121,41 @@ Note: These scores show how the resume compares with the job posting. They do no
       <motion.div variants={riseIn}>
         <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[11px] text-mute mb-1.5 font-mono">
+            <div className="flex items-center gap-2 text-[11px] text-silver mb-1.5 font-mono">
               <span>{analysis.timestamp}</span>
               <span aria-hidden="true">·</span>
               <span className="font-sans">Resume and job comparison</span>
             </div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-ink truncate">
-              {analysis.resumeTitle} <span className="text-[#7DEFFF]">↔</span> {analysis.jobTitle}
+            <h1 className="text-lg sm:text-xl font-heading font-extrabold tracking-tight text-porcelain truncate">
+              {analysis.resumeTitle} <span className="text-[#62D9F5]">↔</span> {analysis.jobTitle}
             </h1>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <button
               onClick={() => downloadHtmlReport(analysis)}
-              className="btn-primary px-3.5 py-2 text-xs"
-              title="Download a report or print it as a PDF"
+              className="btn-primary px-3.5 py-2 text-xs cursor-pointer"
+              title="Download an HTML report or print it as PDF"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download report</span>
             </button>
             <button
               onClick={() => downloadMarkdownReport(analysis)}
-              className="btn-ghost px-3 py-2 text-xs"
-              title="Download a text report"
+              className="btn-ghost px-3 py-2 text-xs cursor-pointer"
+              title="Download a markdown text report"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Text report</span>
             </button>
-            <button onClick={copyReportSummary} className="btn-ghost px-3 py-2 text-xs">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+            <button onClick={copyReportSummary} className="btn-ghost px-3 py-2 text-xs cursor-pointer">
+              {copied ? <Check className="w-3.5 h-3.5 text-[#79F2C0]" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied' : 'Copy summary'}</span>
             </button>
-            <button onClick={downloadReportJson} className="btn-ghost px-3 py-2 text-xs">
+            <button onClick={downloadReportJson} className="btn-ghost px-3 py-2 text-xs cursor-pointer">
               <span>JSON</span>
             </button>
-            <button onClick={onNewAnalysis} className="btn-ghost px-3.5 py-2 text-xs">
+            <button onClick={onNewAnalysis} className="btn-ghost px-3.5 py-2 text-xs cursor-pointer">
               <span>New comparison</span>
             </button>
           </div>
@@ -166,13 +166,15 @@ Note: These scores show how the resume compares with the job posting. They do no
       <motion.div
         variants={riseIn}
         role="note"
-        className="p-4 bg-[#35E7FF]/6 border border-[#35E7FF]/25 rounded-xl text-xs text-[#C8F4FF] flex items-start gap-3"
+        className="p-4 bg-[#62D9F5]/8 border border-[#62D9F5]/25 rounded-xl text-xs text-porcelain flex items-start gap-3"
       >
-        <Info className="w-4 h-4 text-[#7DEFFF] shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-[#62D9F5] shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <span className="font-bold text-ink">About these scores: </span>
-          They show how closely the wording and skills in your resume match the job posting. They do
-          not predict whether you will get hired, and they are not an employer’s official ATS score.
+          <span className="font-bold text-porcelain">About these scores: </span>
+          <span className="text-silver">
+            They evaluate how closely the wording and technical skills in your resume align with the
+            job description. They do not predict hiring probability, nor do they represent an employer's official vendor ATS algorithm.
+          </span>
         </div>
       </motion.div>
 
@@ -227,7 +229,7 @@ Note: These scores show how the resume compares with the job posting. They do no
               <span>Weighted: text × 0.40 · skills × 0.35 · keywords × 0.15 · ATS × 0.10</span>
               <button
                 onClick={() => setShowFormulaModal(!showFormulaModal)}
-                className="flex items-center gap-1 text-[#7DEFFF] hover:text-[#35E7FF] font-semibold transition-colors"
+                className="flex items-center gap-1 text-[#62D9F5] hover:text-[#79F2C0] font-semibold transition-colors cursor-pointer"
                 aria-expanded={showFormulaModal}
               >
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -267,7 +269,7 @@ Note: These scores show how the resume compares with the job posting. They do no
               Checks whether contact details and common resume sections are easy to find. An internal
               readability check — not an official vendor ATS score.
             </span>
-            <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#7DEFFF] group-hover:text-[#35E7FF] transition-colors">
+            <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#62D9F5] group-hover:text-[#79F2C0] transition-colors">
               <ShieldCheck className="w-3.5 h-3.5" />
               Open full ATS audit
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -350,7 +352,7 @@ Note: These scores show how the resume compares with the job posting. They do no
             </div>
             <button
               onClick={() => onTabChange('skills')}
-              className="text-xs font-semibold text-[#7DEFFF] hover:text-[#35E7FF] transition-colors flex items-center gap-1"
+              className="text-xs font-semibold text-[#62D9F5] hover:text-[#79F2C0] transition-colors flex items-center gap-1"
             >
               <span>See all skill gaps</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -372,10 +374,10 @@ Note: These scores show how the resume compares with the job posting. They do no
                     className={cn(
                       'h-full rounded-full',
                       cat.matchPercentage >= 75
-                        ? 'bg-emerald-400'
+                        ? 'bg-[#79F2C0]'
                         : cat.matchPercentage >= 50
-                        ? 'bg-[#35E7FF]'
-                        : 'bg-amber-400'
+                        ? 'bg-[#62D9F5]'
+                        : 'bg-[#F4BD73]'
                     )}
                     initial={{ width: 0 }}
                     whileInView={{ width: `${cat.matchPercentage}%` }}
@@ -443,21 +445,21 @@ Note: These scores show how the resume compares with the job posting. They do no
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(244,247,255,0.05)' }}
+                  cursor={{ fill: 'rgba(241,240,234,0.04)' }}
                   contentStyle={{
-                    backgroundColor: '#0C1220',
-                    borderColor: 'rgba(53,231,255,0.35)',
-                    borderRadius: '10px',
-                    color: '#F4F7FF',
+                    backgroundColor: '#131720',
+                    borderColor: 'rgba(241,240,234,0.12)',
+                    borderRadius: '8px',
+                    color: '#F1F0EA',
                     fontSize: '12px',
                     boxShadow: '0 16px 40px -18px rgba(0,0,0,0.9)',
                   }}
-                  labelStyle={{ color: '#7DEFFF', fontWeight: 700 }}
-                  itemStyle={{ color: '#F4F7FF' }}
+                  labelStyle={{ color: '#79F2C0', fontWeight: 600 }}
+                  itemStyle={{ color: '#F1F0EA' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: '#98A6BE' }} />
-                <Bar dataKey="resumeWeight" name="Resume" fill="#35E7FF" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="jobWeight" name="Job posting" fill="#8B5CFF" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: '#A1A8B5' }} />
+                <Bar dataKey="resumeWeight" name="Resume" fill="#79F2C0" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="jobWeight" name="Job posting" fill="#62D9F5" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -519,9 +521,9 @@ Note: These scores show how the resume compares with the job posting. They do no
 
                   <p className="text-xs text-mute mb-2.5 leading-relaxed">{rec.description}</p>
 
-                  <div className="text-xs text-ink bg-white/[0.05] p-3 rounded-lg border border-white/10 flex items-start gap-2">
-                    <span className="text-[#7DEFFF] font-bold shrink-0">Try this:</span>
-                    <span className="text-mute">{rec.suggestedAction}</span>
+                  <div className="text-xs text-porcelain bg-white/[0.04] p-3 rounded-lg border border-white/[0.08] flex items-start gap-2">
+                    <span className="text-[#79F2C0] font-bold shrink-0">Try this:</span>
+                    <span className="text-silver">{rec.suggestedAction}</span>
                   </div>
                 </div>
               );
@@ -546,13 +548,13 @@ Note: These scores show how the resume compares with the job posting. They do no
             {analysis.matchedSkills.map((skill, idx) => (
               <span
                 key={idx}
-                className="text-xs font-medium text-emerald-200 bg-emerald-400/10 border border-emerald-400/25 rounded-md px-2.5 py-1 hover:border-emerald-400/60 transition-colors"
+                className="text-xs font-medium text-[#79F2C0] bg-[#79F2C0]/10 border border-[#79F2C0]/25 rounded-md px-2.5 py-1 hover:border-[#79F2C0]/60 transition-colors"
               >
                 {skill.name}
               </span>
             ))}
             {analysis.matchedSkills.length === 0 && (
-              <p className="text-xs text-mute italic">No matching skills were found.</p>
+              <p className="text-xs text-silver italic">No matching skills were found.</p>
             )}
           </div>
         </GlowPanel>
@@ -561,23 +563,23 @@ Note: These scores show how the resume compares with the job posting. They do no
         <GlowPanel glow className="p-5">
           <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-300" />
-              <h3 className="text-xs font-bold text-ink">Skills not found ({analysis.missingSkills.length})</h3>
+              <AlertTriangle className="w-4 h-4 text-[#FF777F]" />
+              <h3 className="text-xs font-bold text-porcelain">Skills not found ({analysis.missingSkills.length})</h3>
             </div>
-            <span className="text-[11px] text-mute">Listed in the job posting</span>
+            <span className="text-[11px] text-silver">Listed in the job posting</span>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
             {analysis.missingSkills.map((skill, idx) => (
               <span
                 key={idx}
-                className="text-xs font-medium text-rose-200 bg-rose-400/10 border border-rose-400/25 rounded-md px-2.5 py-1 hover:border-rose-400/60 transition-colors"
+                className="text-xs font-medium text-[#FF777F] bg-[#FF777F]/10 border border-[#FF777F]/25 rounded-md px-2.5 py-1 hover:border-[#FF777F]/60 transition-colors"
               >
                 {skill.name}
               </span>
             ))}
             {analysis.missingSkills.length === 0 && (
-              <p className="text-xs text-mute italic">All listed job skills were found.</p>
+              <p className="text-xs text-silver italic">All listed job skills were found.</p>
             )}
           </div>
         </GlowPanel>

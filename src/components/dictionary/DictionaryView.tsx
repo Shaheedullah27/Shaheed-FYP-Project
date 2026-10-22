@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { 
   BookOpen, 
   Plus, 
@@ -7,7 +8,8 @@ import {
   CheckCircle2, 
   Sparkles, 
   RotateCcw,
-  Tag
+  Tag,
+  Filter
 } from 'lucide-react';
 import { SkillCategory } from '../../types';
 import { 
@@ -17,6 +19,8 @@ import {
   SkillDefinition, 
   DEFAULT_SKILLS_DICTIONARY 
 } from '../../data/skillsDictionary';
+import { GlowPanel } from '../ui/GlowPanel';
+import { cn, riseIn, stagger } from '../../lib/ui';
 
 interface DictionaryViewProps {
   onDictionaryUpdated?: () => void;
@@ -76,7 +80,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
     if (window.confirm('Remove your custom skills and restore the original skills list?')) {
       localStorage.removeItem('ai_resumematch_custom_skills');
       setSkills(DEFAULT_SKILLS_DICTIONARY);
-      setSuccessMessage('Restored the original skills list.');
+      setSuccessMessage('Restored the original canonical skills dictionary.');
       setTimeout(() => setSuccessMessage(null), 3000);
       onDictionaryUpdated?.();
     }
@@ -91,170 +95,209 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
   });
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial="hidden"
+      animate="show"
+      variants={stagger}
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 panel">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#7DEFFF] font-semibold mb-1">
-            <BookOpen className="w-4 h-4" />
-            <span>Skills used in comparisons</span>
+      <motion.div variants={riseIn}>
+        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
+              <BookOpen className="w-4 h-4" />
+              <span>TAXONOMY KNOWLEDGE BASE</span>
+              <span className="text-mute">·</span>
+              <span className="text-mute font-mono">{skills.length} recognized skills</span>
+            </div>
+            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
+              Skills Taxonomy & Aliases
+            </h1>
+            <p className="text-xs text-mute mt-0.5">
+              Customize canonical terms, framework synonyms, and technical keyword mappings recognized by the matching engine.
+            </p>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-ink">
-            Skills list
-          </h1>
-          <p className="text-xs text-mute mt-0.5">
-            Add or remove skills that the app looks for in resumes and job postings.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleResetToDefault}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-mute hover:text-ink bg-white/8 hover:bg-white/12 rounded-lg transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Restore original list</span>
-          </button>
-        </div>
-      </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetToDefault}
+              className="btn-ghost text-xs"
+              title="Restore standard dictionary"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-mute" />
+              <span>Restore Factory Defaults</span>
+            </button>
+          </div>
+        </GlowPanel>
+      </motion.div>
 
       {successMessage && (
-        <div className="p-3 bg-emerald-400/10 border border-emerald-400/30 text-emerald-200 text-xs rounded-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+        <motion.div 
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3.5 bg-[#79F2C0]/10 border border-[#79F2C0]/30 text-[#79F2C0] text-xs rounded-xl flex items-center gap-2.5 font-mono"
+        >
+          <CheckCircle2 className="w-4 h-4 text-[#79F2C0] shrink-0" />
           <span>{successMessage}</span>
-        </div>
+        </motion.div>
       )}
 
       {/* Add New Skill Form */}
-      <div className="p-5 panel">
-        <h2 className="text-sm font-bold text-ink mb-3 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-[#7DEFFF]" />
-          <span>Add a skill</span>
-        </h2>
-        <form onSubmit={handleAddSkill} className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-          <div>
-            <label className="block text-[11px] font-medium text-mute mb-1">
-              Skill or tool
-            </label>
-            <input
-              type="text"
-              value={newSkillName}
-              onChange={(e) => setNewSkillName(e.target.value)}
-              placeholder="e.g. Snowflake, Tableau, HubSpot"
-              className="w-full px-3 py-1.5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#35E7FF]/25 focus:border-[#35E7FF]/60 text-ink"
-              required
-            />
-          </div>
+      <motion.div variants={riseIn}>
+        <GlowPanel className="p-5">
+          <h2 className="text-sm font-display font-bold text-ink mb-3 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-[#79F2C0]" />
+            <span>Register Custom Skill / Technology</span>
+          </h2>
+          <form onSubmit={handleAddSkill} className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+            <div>
+              <label className="block text-[11px] font-mono text-mute mb-1">
+                Canonical Name
+              </label>
+              <input
+                type="text"
+                value={newSkillName}
+                onChange={(e) => setNewSkillName(e.target.value)}
+                placeholder="e.g. Snowflake, PyTorch"
+                className="field"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-mute mb-1">
-              Category
-            </label>
-            <select
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value as SkillCategory)}
-              className="w-full px-3 py-1.5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#35E7FF]/25 focus:border-[#35E7FF]/60 text-ink bg-white/8"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="block text-[11px] font-mono text-mute mb-1">
+                Category Domain
+              </label>
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value as SkillCategory)}
+                className="field"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat} className="bg-[#131720] text-ink">{cat}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-mute mb-1">
-              Other names (separate with commas)
-            </label>
-            <input
-              type="text"
-              value={newAliases}
-              onChange={(e) => setNewAliases(e.target.value)}
-              placeholder="e.g. data warehouse, cloud dw"
-              className="w-full px-3 py-1.5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#35E7FF]/25 focus:border-[#35E7FF]/60 text-ink"
-            />
-          </div>
+            <div>
+              <label className="block text-[11px] font-mono text-mute mb-1">
+                Synonyms (Comma-Separated)
+              </label>
+              <input
+                type="text"
+                value={newAliases}
+                onChange={(e) => setNewAliases(e.target.value)}
+                placeholder="e.g. torch, torchlib, torch.nn"
+                className="field"
+              />
+            </div>
 
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full py-1.5 px-4 btn-primary font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 "
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add skill</span>
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                className="w-full btn-primary text-xs flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Save to Dictionary</span>
+              </button>
+            </div>
+          </form>
+        </GlowPanel>
+      </motion.div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 panel flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-mute/80 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search skills or other names..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#35E7FF]/25 focus:border-[#35E7FF]/60 text-ink"
-          />
-        </div>
+      <motion.div variants={riseIn}>
+        <GlowPanel className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative w-full md:w-80">
+            <Search className="w-4 h-4 text-mute absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Filter by skill or alias..."
+              className="field"
+              style={{ paddingLeft: '2.5rem' }}
+            />
+          </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs">
-          <button
-            onClick={() => setSelectedCategory('All')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${selectedCategory === 'All' ? 'bg-gradient-to-br from-[#35E7FF] to-[#8B5CFF] text-[#05080F] font-semibold' : 'bg-white/8 text-mute hover:text-ink'}`}
-          >
-            All categories ({skills.length})
-          </button>
-          {categories.map((cat) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-xs">
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${selectedCategory === cat ? 'bg-gradient-to-br from-[#35E7FF] to-[#8B5CFF] text-[#05080F] font-semibold' : 'bg-white/8 text-mute hover:text-ink'}`}
+              onClick={() => setSelectedCategory('All')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg font-mono text-[11px] whitespace-nowrap transition-colors border',
+                selectedCategory === 'All'
+                  ? 'bg-[#79F2C0] text-[#0B0D12] font-bold border-[#79F2C0] shadow-[0_0_12px_rgba(121,242,192,0.3)]'
+                  : 'bg-white/[0.03] text-mute hover:text-ink border-white/[0.06]'
+              )}
             >
-              {cat}
+              All Categories ({skills.length})
             </button>
-          ))}
-        </div>
-      </div>
+            {categories.map((cat) => {
+              const active = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg font-mono text-[11px] whitespace-nowrap transition-colors border',
+                    active
+                      ? 'bg-[#79F2C0] text-[#0B0D12] font-bold border-[#79F2C0] shadow-[0_0_12px_rgba(121,242,192,0.3)]'
+                      : 'bg-white/[0.03] text-mute hover:text-ink border-white/[0.06]'
+                  )}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </GlowPanel>
+      </motion.div>
 
       {/* Skills Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <motion.div variants={riseIn} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {filteredSkills.map((skill, idx) => (
           <div
             key={idx}
-            className="p-3.5 panel flex flex-col justify-between hover:border-white/20 transition-colors"
+            className="p-4 rounded-xl border border-white/[0.08] bg-[#131720] hover:bg-[#1B2230] hover:border-white/[0.14] transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-1">
-                <span className="text-xs font-bold text-ink truncate">
+                <span className="text-xs font-semibold text-ink truncate">
                   {skill.name}
                 </span>
                 {skill.isCustom && (
                   <button
                     onClick={() => handleRemoveSkill(skill.name)}
-                    className="text-mute/80 hover:text-rose-300 transition-colors p-0.5"
-                    title="Remove custom skill"
+                    className="text-mute hover:text-[#FF777F] transition-colors p-0.5 rounded"
+                    title="Remove custom skill definition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-              <span className="text-[10px] text-mute font-medium block mb-2">
+              <span className="text-[10px] font-mono text-[#62D9F5] block mb-2.5">
                 {skill.category}
               </span>
             </div>
 
             {skill.aliases && skill.aliases.length > 0 ? (
-              <div className="text-[10px] text-mute/80 truncate">
-                Synonyms: {skill.aliases.join(', ')}
+              <div className="text-[10px] font-mono text-mute truncate bg-white/[0.02] p-1.5 rounded border border-white/[0.04]">
+                <span className="text-mute/60">aka: </span>
+                {skill.aliases.join(', ')}
               </div>
             ) : (
-              <div className="text-[10px] text-mute italic">No synonyms</div>
+              <div className="text-[10px] font-mono text-mute/50 italic">Standard canonical term</div>
             )}
           </div>
         ))}
-      </div>
-    </div>
+
+        {filteredSkills.length === 0 && (
+          <div className="col-span-full py-12 text-center text-xs text-mute font-mono">
+            No dictionary entries match "{searchTerm}".
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
   );
 };

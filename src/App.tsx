@@ -15,6 +15,7 @@ import { BackendGuideView } from './components/architecture/BackendGuideView';
 import { AboutView } from './components/about/AboutView';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { GlowPanel } from './components/ui/GlowPanel';
+import { CustomCursor } from './components/ui/CustomCursor';
 
 import { ActiveTab, AnalysisResult, HistoryItem } from './types';
 import { 
@@ -148,23 +149,26 @@ export default function App() {
       };
 
   return (
-    <div data-theme={theme} className="relative min-h-screen flex flex-col lg:flex-row bg-abyss text-ink font-sans antialiased">
-      {/* Layered ambient environment: radial light fields + technical grid */}
+    <div data-theme={theme} className="relative min-h-screen w-full overflow-x-hidden flex flex-col lg:flex-row bg-[#0B0D12] text-[#F1F0EA] font-sans antialiased">
+      {/* Desktop Custom Cursor */}
+      <CustomCursor />
+
+      {/* Layered ambient environment: restrained architectural lighting + technical grid */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 grid-lines opacity-70" />
+        <div className="absolute inset-0 grid-lines opacity-40" />
         <div
-          className="absolute -top-48 -left-40 h-[36rem] w-[36rem] rounded-full blur-[130px]"
-          style={{ background: 'radial-gradient(circle, rgba(53,231,255,0.13), transparent 65%)' }}
+          className="absolute -top-40 right-1/4 h-[32rem] w-[32rem] rounded-full blur-[140px]"
+          style={{ background: 'radial-gradient(circle, rgba(121,242,192,0.045), transparent 70%)' }}
         />
         <div
-          className="absolute -bottom-56 -right-40 h-[42rem] w-[42rem] rounded-full blur-[140px]"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,255,0.16), transparent 65%)' }}
+          className="absolute bottom-10 -left-20 h-[36rem] w-[36rem] rounded-full blur-[150px]"
+          style={{ background: 'radial-gradient(circle, rgba(98,217,245,0.03), transparent 70%)' }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 120% 60% at 50% -10%, rgba(53,231,255,0.06), transparent 55%)',
+              'radial-gradient(ellipse 100% 35% at 50% 0%, rgba(121,242,192,0.025), transparent 60%)',
           }}
         />
       </div>

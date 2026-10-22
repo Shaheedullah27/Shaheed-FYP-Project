@@ -24,7 +24,8 @@ import {
   BadgeAlert,
   Terminal,
   Activity,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { 
   SecurityFinding, 
@@ -42,7 +43,7 @@ import {
   getFlaskUrl
 } from '../../services/api';
 import { GlowPanel } from '../ui/GlowPanel';
-import { cn, riseIn } from '../../lib/ui';
+import { cn, riseIn, stagger } from '../../lib/ui';
 
 export const SecurityDashboardView: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'findings' | 'audit' | 'policies'>('findings');
@@ -57,7 +58,6 @@ export const SecurityDashboardView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   // Detail Modal State
   const [selectedFinding, setSelectedFinding] = useState<SecurityFinding | null>(null);
@@ -133,9 +133,7 @@ export const SecurityDashboardView: React.FC = () => {
 
       if (res.success) {
         setReviewFeedback({ message: res.message || 'Review action recorded successfully.', type: 'success' });
-        // Refresh findings and summary
         await loadAllSecurityData();
-        // Update local finding
         setSelectedFinding(prev => prev ? {
           ...prev,
           reviewer_status: reviewAction === 'confirm' ? 'confirmed' : reviewAction === 'false_positive' ? 'false_positive' : 'under_review',
@@ -154,14 +152,14 @@ export const SecurityDashboardView: React.FC = () => {
   const getSeverityBadgeClass = (severity: SecuritySeverity) => {
     switch (severity) {
       case 'CRITICAL':
-        return 'bg-rose-500/15 border-rose-500/40 text-rose-400 animate-pulse';
+        return 'bg-[#FF777F]/15 border-[#FF777F]/40 text-[#FF777F] animate-pulse';
       case 'HIGH':
-        return 'bg-amber-500/15 border-amber-500/40 text-amber-400';
+        return 'bg-[#F4BD73]/15 border-[#F4BD73]/40 text-[#F4BD73]';
       case 'MEDIUM':
-        return 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300';
+        return 'bg-[#F4BD73]/10 border-[#F4BD73]/30 text-[#F4BD73]';
       case 'LOW':
       default:
-        return 'bg-sky-500/15 border-sky-500/40 text-sky-400';
+        return 'bg-[#62D9F5]/15 border-[#62D9F5]/40 text-[#62D9F5]';
     }
   };
 
@@ -169,37 +167,37 @@ export const SecurityDashboardView: React.FC = () => {
     switch (status) {
       case 'QUARANTINED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-950/80 border border-red-500/50 text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.25)]">
-            <ShieldAlert className="w-3 h-3 text-red-400 animate-pulse" />
-            Quarantined for Security Review
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FF777F]/15 border border-[#FF777F]/40 text-[#FF777F] shadow-[0_0_12px_rgba(255,119,127,0.25)]">
+            <ShieldAlert className="w-3 h-3 text-[#FF777F] animate-pulse" />
+            Quarantined
           </span>
         );
       case 'FLAGGED_FOR_REVIEW':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-950/70 border border-amber-500/40 text-amber-300">
-            <AlertTriangle className="w-3 h-3 text-amber-400" />
-            Flagged for Review
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#F4BD73]/15 border border-[#F4BD73]/40 text-[#F4BD73]">
+            <AlertTriangle className="w-3 h-3 text-[#F4BD73]" />
+            Flagged Review
           </span>
         );
       case 'CLEARED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-950/70 border border-emerald-500/40 text-emerald-300">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            Cleared by Reviewer
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#79F2C0]/15 border border-[#79F2C0]/40 text-[#79F2C0]">
+            <CheckCircle2 className="w-3 h-3 text-[#79F2C0]" />
+            Cleared
           </span>
         );
       case 'REJECTED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-950/70 border border-rose-500/40 text-rose-300">
-            <XCircle className="w-3 h-3 text-rose-400" />
-            Rejected by Policy
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FF777F]/15 border border-[#FF777F]/40 text-[#FF777F]">
+            <XCircle className="w-3 h-3 text-[#FF777F]" />
+            Rejected
           </span>
         );
       case 'NOT_QUARANTINED':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#79F2C0]/10 border border-[#79F2C0]/30 text-[#79F2C0]">
+            <ShieldCheck className="w-3 h-3 text-[#79F2C0]" />
             Clean (Verified)
           </span>
         );
@@ -209,176 +207,174 @@ export const SecurityDashboardView: React.FC = () => {
   const flaskUrl = getFlaskUrl();
 
   return (
-    <div className="space-y-6 pb-12">
+    <motion.div 
+      initial="hidden"
+      animate="show"
+      variants={stagger}
+      className="space-y-6 pb-12"
+    >
       {/* Title & Controls Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/20 border border-rose-500/30 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
-              <ShieldAlert className="w-5 h-5" />
+      <motion.div variants={riseIn}>
+        <GlowPanel glow className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
+              <ShieldAlert className="w-4 h-4 text-[#FF777F]" />
+              <span>FORENSIC TELEMETRY & QUARANTINE</span>
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-ink">
-                Resume Security & Quarantine Center
-              </h1>
-              <p className="text-xs text-mute mt-0.5">
-                Multi-layer manipulation forensics, hidden instruction detection & administrative quarantine.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex rounded-xl bg-white/[0.04] p-1 border border-white/10 text-xs">
-            <button
-              onClick={() => setActiveSubTab('findings')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-medium transition-all',
-                activeSubTab === 'findings' ? 'bg-[#35E7FF]/15 text-[#7DEFFF] border border-[#35E7FF]/30' : 'text-mute hover:text-ink'
-              )}
-            >
-              Findings & Quarantine
-            </button>
-            <button
-              onClick={() => setActiveSubTab('audit')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-medium transition-all',
-                activeSubTab === 'audit' ? 'bg-[#35E7FF]/15 text-[#7DEFFF] border border-[#35E7FF]/30' : 'text-mute hover:text-ink'
-              )}
-            >
-              Audit Trail
-            </button>
-            <button
-              onClick={() => setActiveSubTab('policies')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-medium transition-all',
-                activeSubTab === 'policies' ? 'bg-[#35E7FF]/15 text-[#7DEFFF] border border-[#35E7FF]/30' : 'text-mute hover:text-ink'
-              )}
-            >
-              Policies
-            </button>
+            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
+              Resume Manipulation Defense & Policy
+            </h1>
+            <p className="text-xs text-mute mt-0.5">
+              Multi-layer hidden instruction detection, white-on-white text auditing, and administrative quarantine controls.
+            </p>
           </div>
 
-          <button
-            onClick={loadAllSecurityData}
-            disabled={isRefreshing}
-            className="p-2 rounded-xl bg-white/5 border border-white/10 text-mute hover:text-ink hover:bg-white/10 transition-colors"
-            title="Refresh Security Telemetry"
-          >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-[#35E7FF]")} />
-          </button>
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-xl bg-white/[0.04] p-1 border border-white/[0.08] text-xs">
+              {[
+                { id: 'findings', label: 'Findings & Quarantine' },
+                { id: 'audit', label: 'Audit Trail' },
+                { id: 'policies', label: 'Detection Policies' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSubTab(tab.id as any)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg font-mono text-[11px] transition-all',
+                    activeSubTab === tab.id 
+                      ? 'bg-[#79F2C0] text-[#0B0D12] font-bold shadow-[0_0_12px_rgba(121,242,192,0.3)]' 
+                      : 'text-mute hover:text-ink'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={loadAllSecurityData}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-mute hover:text-ink hover:bg-white/[0.08] transition-colors"
+              title="Refresh Security Telemetry"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-[#79F2C0]")} />
+            </button>
+          </div>
+        </GlowPanel>
+      </motion.div>
 
       {/* Mandatory Incomplete / Alert Banner */}
       {summary && summary.incomplete_count > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-          <div className="text-xs">
-            <span className="font-bold text-amber-300 block mb-0.5">
-              Warning: Image-based content could not be fully inspected. Security analysis is incomplete.
-            </span>
-            <span>
-              Documents containing embedded images require local Tesseract OCR engine to inspect rasterized text. 
-              The system conservative review policy is active. Resumes are flagged for manual reviewer inspection.
-            </span>
+        <motion.div variants={riseIn}>
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F4BD73]/10 border border-[#F4BD73]/30 text-[#F4BD73]">
+            <AlertTriangle className="w-5 h-5 text-[#F4BD73] shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <span className="font-bold text-[#F4BD73] block mb-0.5">
+                Warning: Image-based content could not be fully inspected. Security analysis is incomplete.
+              </span>
+              <span className="text-[#F1F0EA]/85">
+                Documents containing embedded images require local Tesseract OCR engine to inspect rasterized text. 
+                Conservative review policy is active: unverified resumes are automatically flagged for manual reviewer inspection.
+              </span>
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* 6 Top Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <motion.div variants={riseIn} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <GlowPanel className="p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Resumes</span>
-            <FileSearch className="w-4 h-4 text-[#35E7FF]" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Total Scanned</span>
+            <FileSearch className="w-4 h-4 text-[#62D9F5]" />
           </div>
-          <div className="text-2xl font-black text-ink font-mono">
+          <div className="text-2xl font-black text-ink font-mono tabular-nums">
             {summary?.total_inspected ?? 0}
           </div>
-          <div className="text-[10px] text-mute mt-1">Multi-layer inspected</div>
+          <div className="text-[10px] text-mute font-mono mt-1">Multi-layer parsed</div>
         </GlowPanel>
 
         <GlowPanel className="p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Clean Documents</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Clean Documents</span>
+            <ShieldCheck className="w-4 h-4 text-[#79F2C0]" />
           </div>
-          <div className="text-2xl font-black text-emerald-400 font-mono">
+          <div className="text-2xl font-black text-[#79F2C0] font-mono tabular-nums">
             {summary?.clean_count ?? 0}
           </div>
-          <div className="text-[10px] text-mute mt-1">0 threats detected</div>
+          <div className="text-[10px] text-mute font-mono mt-1">0 threats detected</div>
         </GlowPanel>
 
         <GlowPanel className="p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Flagged Review</span>
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Flagged Review</span>
+            <AlertTriangle className="w-4 h-4 text-[#F4BD73]" />
           </div>
-          <div className="text-2xl font-black text-amber-400 font-mono">
+          <div className="text-2xl font-black text-[#F4BD73] font-mono tabular-nums">
             {summary?.flagged_count ?? 0}
           </div>
-          <div className="text-[10px] text-mute mt-1">Ambiguous / heuristic</div>
+          <div className="text-[10px] text-mute font-mono mt-1">Heuristic anomaly</div>
         </GlowPanel>
 
-        <GlowPanel className="p-4 flex flex-col justify-between border-red-500/30 bg-red-950/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+        <GlowPanel className="p-4 flex flex-col justify-between border-[#FF777F]/30 bg-[#FF777F]/5 shadow-[0_0_15px_rgba(255,119,127,0.1)]">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-red-300">Quarantined</span>
-            <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#FF777F]">Quarantined</span>
+            <ShieldAlert className="w-4 h-4 text-[#FF777F] animate-pulse" />
           </div>
-          <div className="text-2xl font-black text-red-400 font-mono">
+          <div className="text-2xl font-black text-[#FF777F] font-mono tabular-nums">
             {summary?.quarantined_count ?? 0}
           </div>
-          <div className="text-[10px] text-red-300/80 mt-1">Excluded from shortlist</div>
+          <div className="text-[10px] text-[#FF777F]/80 font-mono mt-1">Excluded from pool</div>
         </GlowPanel>
 
         <GlowPanel className="p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Critical / High</span>
-            <AlertOctagon className="w-4 h-4 text-rose-400" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Critical / High</span>
+            <AlertOctagon className="w-4 h-4 text-[#FF777F]" />
           </div>
-          <div className="text-2xl font-black text-rose-400 font-mono">
+          <div className="text-2xl font-black text-[#FF777F] font-mono tabular-nums">
             {summary?.critical_high_count ?? 0}
           </div>
-          <div className="text-[10px] text-mute mt-1">Severe manipulation</div>
+          <div className="text-[10px] text-mute font-mono mt-1">High-confidence</div>
         </GlowPanel>
 
         <GlowPanel className="p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-mute mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Incomplete</span>
-            <HelpCircle className="w-4 h-4 text-yellow-400" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Incomplete</span>
+            <HelpCircle className="w-4 h-4 text-[#F4BD73]" />
           </div>
-          <div className="text-2xl font-black text-yellow-300 font-mono">
+          <div className="text-2xl font-black text-[#F4BD73] font-mono tabular-nums">
             {summary?.incomplete_count ?? 0}
           </div>
-          <div className="text-[10px] text-mute mt-1">OCR uninspected</div>
+          <div className="text-[10px] text-mute font-mono mt-1">OCR uninspected</div>
         </GlowPanel>
-      </div>
+      </motion.div>
 
       {/* Main Tab Content */}
       {activeSubTab === 'findings' && (
-        <div className="space-y-4">
+        <motion.div variants={riseIn} className="space-y-4">
           {/* Search & Filter Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08]">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-mute pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search candidate name, filename, snippet, or detection rule..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-ink placeholder-mute focus:outline-none focus:border-[#35E7FF]/50"
+                className="field"
+                style={{ paddingLeft: '2.4rem' }}
               />
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-              <div className="flex items-center gap-1.5 text-xs text-mute">
+              <div className="flex items-center gap-1.5 text-xs text-mute font-mono">
                 <Filter className="w-3.5 h-3.5" />
                 <span>Severity:</span>
                 <select
                   value={selectedSeverity}
                   onChange={(e) => setSelectedSeverity(e.target.value)}
-                  className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-ink focus:outline-none"
+                  className="bg-[#131720] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
                 >
                   <option value="ALL">All Severities</option>
                   <option value="CRITICAL">Critical</option>
@@ -388,12 +384,12 @@ export const SecurityDashboardView: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-mute">
+              <div className="flex items-center gap-1.5 text-xs text-mute font-mono">
                 <span>Status:</span>
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-ink focus:outline-none"
+                  className="bg-[#131720] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-ink focus:outline-none"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="unreviewed">Unreviewed</option>
@@ -407,11 +403,11 @@ export const SecurityDashboardView: React.FC = () => {
           </div>
 
           {/* Findings Table */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+          <GlowPanel className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-white/10 bg-white/[0.03] text-mute uppercase tracking-wider text-[10px]">
+                  <tr className="border-b border-white/[0.08] bg-white/[0.02] text-mute uppercase tracking-wider text-[10px] font-mono">
                     <th className="py-3 px-4">Candidate & Resume</th>
                     <th className="py-3 px-3">Security Status</th>
                     <th className="py-3 px-3">Severity</th>
@@ -421,11 +417,11 @@ export const SecurityDashboardView: React.FC = () => {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-white/[0.06]">
                   {findings.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-mute">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-80" />
+                        <CheckCircle2 className="w-8 h-8 text-[#79F2C0] mx-auto mb-2 opacity-80" />
                         <span className="block font-medium text-ink">No Security Findings Matching Filter</span>
                         <span className="text-[11px] block mt-0.5">Documents appear free of manipulation patterns.</span>
                       </td>
@@ -438,7 +434,7 @@ export const SecurityDashboardView: React.FC = () => {
                         className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
                       >
                         <td className="py-3 px-4">
-                          <span className="font-bold text-ink block truncate max-w-[180px]">
+                          <span className="font-bold text-ink block truncate max-w-[180px] group-hover:text-[#79F2C0] transition-colors">
                             {f.candidate_name || 'Anonymous Applicant'}
                           </span>
                           <span className="text-[11px] text-mute font-mono block truncate max-w-[180px]">
@@ -451,13 +447,13 @@ export const SecurityDashboardView: React.FC = () => {
                         </td>
 
                         <td className="py-3 px-3">
-                          <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold border', getSeverityBadgeClass(f.severity))}>
+                          <span className={cn('px-2 py-0.5 rounded text-[10px] font-mono font-bold border', getSeverityBadgeClass(f.severity))}>
                             {f.severity}
                           </span>
                         </td>
 
                         <td className="py-3 px-3">
-                          <span className="text-[10px] font-mono text-mute px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
+                          <span className="text-[10px] font-mono text-mute px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08]">
                             {f.confidence}
                           </span>
                         </td>
@@ -472,7 +468,7 @@ export const SecurityDashboardView: React.FC = () => {
                         </td>
 
                         <td className="py-3 px-3">
-                          <span className="capitalize text-mute text-[11px] font-medium">
+                          <span className="capitalize text-mute text-[11px] font-mono">
                             {f.reviewer_status.replace('_', ' ')}
                           </span>
                         </td>
@@ -483,7 +479,7 @@ export const SecurityDashboardView: React.FC = () => {
                               e.stopPropagation();
                               handleOpenFindingDetails(f);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#35E7FF]/10 text-[#7DEFFF] border border-[#35E7FF]/30 hover:bg-[#35E7FF]/20 text-[11px] font-medium transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#62D9F5]/10 text-[#62D9F5] border border-[#62D9F5]/30 hover:bg-[#62D9F5]/20 text-[11px] font-mono font-medium transition-all"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Inspect</span>
@@ -495,109 +491,111 @@ export const SecurityDashboardView: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
+          </GlowPanel>
+        </motion.div>
       )}
 
       {/* Audit Trail Sub-Tab */}
       {activeSubTab === 'audit' && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-[#35E7FF]" />
-              <h3 className="text-sm font-bold text-ink">Immutable Security Audit Trail</h3>
+        <motion.div variants={riseIn}>
+          <GlowPanel className="overflow-hidden">
+            <div className="p-4 border-b border-white/[0.08] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-[#79F2C0]" />
+                <h3 className="text-sm font-display font-bold text-ink">Immutable Security Audit Trail</h3>
+              </div>
+              <span className="text-[11px] text-mute font-mono">
+                {auditLogs.length} logged security actions
+              </span>
             </div>
-            <span className="text-[11px] text-mute font-mono">
-              {auditLogs.length} logged security actions
-            </span>
-          </div>
 
-          <div className="divide-y divide-white/5 text-xs font-mono">
-            {auditLogs.length === 0 ? (
-              <div className="p-8 text-center text-mute">No security audit records logged yet.</div>
-            ) : (
-              auditLogs.map((log) => (
-                <div key={log.id} className="p-4 hover:bg-white/[0.02] transition-colors flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-amber-400 font-bold">{log.action}</span>
-                      <span className="text-mute">•</span>
-                      <span className="text-mute">{log.actor}</span>
-                      <span className="text-mute">•</span>
-                      <span className="text-[#35E7FF]">{log.target_type} ({log.target_id})</span>
-                    </div>
-                    {log.reason && (
-                      <div className="text-[11px] text-ink/80 mt-0.5 font-sans">
-                        Reason: {log.reason}
+            <div className="divide-y divide-white/[0.06] text-xs font-mono">
+              {auditLogs.length === 0 ? (
+                <div className="p-8 text-center text-mute">No security audit records logged yet.</div>
+              ) : (
+                auditLogs.map((log) => (
+                  <div key={log.id} className="p-4 hover:bg-white/[0.02] transition-colors flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#F4BD73] font-bold">{log.action}</span>
+                        <span className="text-mute">•</span>
+                        <span className="text-ink">{log.actor}</span>
+                        <span className="text-mute">•</span>
+                        <span className="text-[#62D9F5]">{log.target_type} ({log.target_id})</span>
                       </div>
-                    )}
+                      {log.reason && (
+                        <div className="text-[11px] text-mute mt-1 font-sans">
+                          Reason: {log.reason}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-mute text-[10px] shrink-0 font-mono">
+                      {log.timestamp}
+                    </div>
                   </div>
-                  <div className="text-mute text-[10px] shrink-0">
-                    {log.timestamp}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+                ))
+              )}
+            </div>
+          </GlowPanel>
+        </motion.div>
       )}
 
       {/* Security Policies Sub-Tab */}
       {activeSubTab === 'policies' && (
-        <div className="space-y-4">
+        <motion.div variants={riseIn} className="space-y-4">
           <GlowPanel className="p-6">
-            <div className="flex items-center gap-2.5 mb-4">
-              <Sliders className="w-5 h-5 text-[#35E7FF]" />
-              <h3 className="text-sm font-bold text-ink">Configurable Detection Thresholds & Quarantine Policies</h3>
+            <div className="flex items-center gap-2.5 mb-3">
+              <Sliders className="w-5 h-5 text-[#79F2C0]" />
+              <h3 className="text-sm font-display font-bold text-ink">Detection Thresholds & Quarantine Policies</h3>
             </div>
-            <p className="text-xs text-mute mb-6">
-              These policy rules govern automated quarantine triggers, OCR limitations, and visual contrast criteria.
-              Document content is untrusted and can never modify these parameters.
+            <p className="text-xs text-mute mb-6 leading-relaxed">
+              These policy parameters govern automated quarantine thresholds, OCR coverage criteria, and font contrast limits.
+              Document content is untrusted and cannot override these server-enforced rules.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-1">
                 <span className="text-xs font-bold text-ink block">Minimum Visible Font Size (pt)</span>
                 <span className="text-[11px] text-mute block">
                   Text rendered below this threshold is treated as micro-font concealment.
                 </span>
-                <span className="text-sm font-mono text-[#35E7FF] font-bold block pt-1">
+                <span className="text-sm font-mono text-[#62D9F5] font-bold block pt-1">
                   {policies.min_visible_font_size_pt ?? 3.5} pt
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-1">
                 <span className="text-xs font-bold text-ink block">White-on-White Luminance Threshold</span>
                 <span className="text-[11px] text-mute block">
                   Relative perceived brightness threshold for low-visibility text detection.
                 </span>
-                <span className="text-sm font-mono text-[#35E7FF] font-bold block pt-1">
+                <span className="text-sm font-mono text-[#62D9F5] font-bold block pt-1">
                   {policies.white_text_luminance_threshold ?? 0.92} (92% luminance)
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                <span className="text-xs font-bold text-ink block">Automatic Quarantine on Critical Prompt Injection</span>
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-1">
+                <span className="text-xs font-bold text-ink block">Automatic Quarantine on Critical Injection</span>
                 <span className="text-[11px] text-mute block">
-                  Immediately quarantines candidate from shortlist when high-confidence injection is detected.
+                  Immediately quarantines candidate from shortlist when prompt injection is detected.
                 </span>
-                <span className="text-sm font-mono text-emerald-400 font-bold block pt-1">
+                <span className="text-sm font-mono text-[#79F2C0] font-bold block pt-1">
                   {policies.quarantine_on_critical ? 'ENABLED (Strict)' : 'DISABLED'}
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-1">
                 <span className="text-xs font-bold text-ink block">Conservative Policy for Incomplete OCR</span>
                 <span className="text-[11px] text-mute block">
                   Default status assigned when rasterized image content cannot be OCR-verified.
                 </span>
-                <span className="text-sm font-mono text-amber-400 font-bold block pt-1">
+                <span className="text-sm font-mono text-[#F4BD73] font-bold block pt-1">
                   {policies.conservative_incomplete_policy ?? 'FLAGGED_FOR_REVIEW'}
                 </span>
               </div>
             </div>
           </GlowPanel>
-        </div>
+        </motion.div>
       )}
 
       {/* Forensic Evidence Detail Modal */}
@@ -608,23 +606,23 @@ export const SecurityDashboardView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#0B101E] border border-white/15 shadow-[0_25px_70px_rgba(0,0,0,0.85)] overflow-hidden"
+              className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#131720] border border-white/15 shadow-[0_25px_70px_rgba(0,0,0,0.85)] overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="p-5 border-b border-white/10 flex items-start justify-between bg-white/[0.02]">
+              <div className="p-5 border-b border-white/[0.08] flex items-start justify-between bg-white/[0.02]">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={cn('px-2.5 py-0.5 rounded text-[10px] font-bold border uppercase', getSeverityBadgeClass(selectedFinding.severity))}>
+                    <span className={cn('px-2.5 py-0.5 rounded text-[10px] font-mono font-bold border uppercase', getSeverityBadgeClass(selectedFinding.severity))}>
                       {selectedFinding.severity} SEVERITY
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-mute">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-mute">
                       CONFIDENCE: {selectedFinding.confidence}
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#35E7FF]/10 text-[#7DEFFF] border border-[#35E7FF]/30">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#62D9F5]/10 text-[#62D9F5] border border-[#62D9F5]/30">
                       RULE: {selectedFinding.rule_id}
                     </span>
                   </div>
-                  <h2 className="text-lg font-bold text-ink">
+                  <h2 className="text-lg font-display font-bold text-ink">
                     {selectedFinding.title}
                   </h2>
                   <p className="text-xs text-mute mt-0.5">
@@ -634,7 +632,7 @@ export const SecurityDashboardView: React.FC = () => {
 
                 <button
                   onClick={() => setSelectedFinding(null)}
-                  className="p-1.5 rounded-lg text-mute hover:text-ink hover:bg-white/10 transition-colors"
+                  className="p-1.5 rounded-lg text-mute hover:text-ink hover:bg-white/[0.08] transition-colors"
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
@@ -642,17 +640,17 @@ export const SecurityDashboardView: React.FC = () => {
 
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-                {/* 1. What was detected & Explainable finding */}
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+                {/* 1. What was detected */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-2">
                   <div className="flex items-center gap-2 text-ink font-bold text-xs uppercase tracking-wide">
-                    <Terminal className="w-4 h-4 text-[#35E7FF]" />
+                    <Terminal className="w-4 h-4 text-[#79F2C0]" />
                     <span>Explainable Finding & Forensics Context</span>
                   </div>
                   <p className="text-mute leading-relaxed">
                     {selectedFinding.description}
                   </p>
                   {selectedFinding.detection_details?.matched_phrase && (
-                    <div className="p-2.5 rounded-lg bg-black/60 border border-rose-500/30 text-rose-300 font-mono text-[11px]">
+                    <div className="p-2.5 rounded-lg bg-black/60 border border-[#FF777F]/30 text-[#FF777F] font-mono text-[11px]">
                       Matched trigger phrase: "{selectedFinding.detection_details.matched_phrase}"
                     </div>
                   )}
@@ -660,25 +658,25 @@ export const SecurityDashboardView: React.FC = () => {
 
                 {/* 2. Exact Evidence Snippet */}
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-mute uppercase tracking-wider block">
+                  <span className="text-[11px] font-mono font-bold text-mute uppercase tracking-wider block">
                     Concealed Text Snippet (Direct Document Evidence)
                   </span>
-                  <div className="p-3.5 rounded-xl bg-black/70 border border-white/10 font-mono text-[11px] text-ink leading-relaxed break-all select-all">
+                  <div className="p-3.5 rounded-xl bg-black/70 border border-white/[0.08] font-mono text-[11px] text-ink leading-relaxed break-all select-all">
                     {selectedFinding.snippet || 'No plain text snippet extracted.'}
                   </div>
                 </div>
 
                 {/* 3. Document Location & Visibility Metrics */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                    <span className="text-[10px] text-mute block uppercase">Page Number</span>
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                    <span className="text-[10px] font-mono text-mute block uppercase">Page Number</span>
                     <span className="text-sm font-bold text-ink font-mono mt-0.5 block">
                       Page {selectedFinding.page_number}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                    <span className="text-[10px] text-mute block uppercase">Font Color</span>
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                    <span className="text-[10px] font-mono text-mute block uppercase">Font Color</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {selectedFinding.font_color && (
                         <span 
@@ -692,44 +690,43 @@ export const SecurityDashboardView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                    <span className="text-[10px] text-mute block uppercase">Font Size</span>
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                    <span className="text-[10px] font-mono text-mute block uppercase">Font Size</span>
                     <span className="text-xs font-bold text-ink font-mono mt-0.5 block">
                       {selectedFinding.font_size ? `${selectedFinding.font_size} pt` : 'Standard'}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10">
-                    <span className="text-[10px] text-mute block uppercase">Visibility Evidence</span>
-                    <span className="text-[11px] font-medium text-amber-300 mt-0.5 block truncate" title={selectedFinding.visibility_evidence}>
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                    <span className="text-[10px] font-mono text-mute block uppercase">Visibility Evidence</span>
+                    <span className="text-[11px] font-medium text-[#F4BD73] mt-0.5 block truncate" title={selectedFinding.visibility_evidence}>
                       {selectedFinding.visibility_evidence || 'Stream object'}
                     </span>
                   </div>
                 </div>
 
-                {/* 4. Rendered Evidence Preview (PDF highlighted bbox) */}
+                {/* 4. Rendered Evidence Preview */}
                 {selectedFinding.filename?.toLowerCase().endsWith('.pdf') && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-mute uppercase tracking-wider">
+                      <span className="text-[11px] font-mono font-bold text-mute uppercase tracking-wider">
                         Rendered Page Visual Inspection (Highlighted Bounding Box)
                       </span>
-                      <span className="text-[10px] text-mute">
+                      <span className="text-[10px] font-mono text-mute">
                         Safe rendering engine • Zero script execution
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-black/60 border border-white/10 flex flex-col items-center justify-center min-h-[220px]">
+                    <div className="p-3 rounded-xl bg-black/60 border border-white/[0.08] flex flex-col items-center justify-center min-h-[220px]">
                       <img
                         src={`${flaskUrl}/api/security/evidence/${selectedFinding.inspection_id}/page/${selectedFinding.page_number}`}
                         alt="Document evidence with bounding box highlight"
                         className="max-h-[380px] w-auto object-contain rounded-lg border border-white/15 shadow-lg"
                         onError={(e) => {
-                          // Fallback display if cached PDF is not present
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
-                      <div className="text-[11px] text-mute text-center mt-2">
+                      <div className="text-[11px] text-mute text-center mt-2 font-mono">
                         {selectedFinding.bbox && selectedFinding.bbox.length === 4 ? (
                           <span>Bounding Box Coordinates: [{selectedFinding.bbox.map((v: number) => v.toFixed(1)).join(', ')}]</span>
                         ) : (
@@ -741,21 +738,21 @@ export const SecurityDashboardView: React.FC = () => {
                 )}
 
                 {/* 5. Administrative Decision & Review Actions */}
-                <div className="p-5 rounded-xl bg-white/[0.03] border border-white/10 space-y-4">
+                <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-ink uppercase tracking-wide flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-amber-400" />
+                      <Lock className="w-4 h-4 text-[#F4BD73]" />
                       Administrative Decision & Review Action
                     </span>
-                    <span className="text-[10px] text-mute">
+                    <span className="text-[10px] font-mono text-mute">
                       Current: {selectedFinding.reviewer_status}
                     </span>
                   </div>
 
                   {reviewFeedback && (
                     <div className={cn(
-                      "p-3 rounded-lg text-xs font-medium",
-                      reviewFeedback.type === 'success' ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-300" : "bg-rose-500/15 border border-rose-500/30 text-rose-300"
+                      "p-3 rounded-lg text-xs font-medium font-mono",
+                      reviewFeedback.type === 'success' ? "bg-[#79F2C0]/15 border border-[#79F2C0]/30 text-[#79F2C0]" : "bg-[#FF777F]/15 border border-[#FF777F]/30 text-[#FF777F]"
                     )}>
                       {reviewFeedback.message}
                     </div>
@@ -763,56 +760,56 @@ export const SecurityDashboardView: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] text-mute block mb-1">Select Review Action</label>
+                      <label className="text-[11px] font-mono text-mute block mb-1">Select Review Action</label>
                       <select
                         value={reviewAction}
                         onChange={(e) => setReviewAction(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus:border-[#35E7FF]/50"
+                        className="field"
                       >
-                        <option value="under_review">Mark as Under Active Review</option>
-                        <option value="confirm">Confirm Security Concern (Keep Flagged)</option>
-                        <option value="false_positive">Mark as False Positive (Preserve Audit)</option>
-                        <option value="clear">Clear Resume (Mark Safe)</option>
-                        <option value="release">Release from Security Quarantine</option>
-                        <option value="reject">Reject Application under Policy</option>
+                        <option value="under_review" className="bg-[#131720] text-ink">Mark as Under Active Review</option>
+                        <option value="confirm" className="bg-[#131720] text-ink">Confirm Security Concern (Keep Flagged)</option>
+                        <option value="false_positive" className="bg-[#131720] text-ink">Mark as False Positive (Preserve Audit)</option>
+                        <option value="clear" className="bg-[#131720] text-ink">Clear Resume (Mark Safe)</option>
+                        <option value="release" className="bg-[#131720] text-ink">Release from Security Quarantine</option>
+                        <option value="reject" className="bg-[#131720] text-ink">Reject Application under Policy</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-mute block mb-1">Acting Reviewer Name</label>
+                      <label className="text-[11px] font-mono text-mute block mb-1">Acting Reviewer Name</label>
                       <input
                         type="text"
                         value={reviewerName}
                         onChange={(e) => setReviewerName(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus:border-[#35E7FF]/50"
+                        className="field"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[11px] text-mute block mb-1">
-                      Review Reason & Findings Justification <span className="text-rose-400">*</span>
+                    <label className="text-[11px] font-mono text-mute block mb-1">
+                      Review Reason & Findings Justification <span className="text-[#FF777F]">*</span>
                     </label>
                     <textarea
                       value={reviewReason}
                       onChange={(e) => setReviewReason(e.target.value)}
                       placeholder="Explain the investigative rationale for clearing, confirming, or releasing this candidate document..."
                       rows={2}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-ink focus:outline-none focus:border-[#35E7FF]/50 resize-none"
+                      className="field resize-none"
                     />
                   </div>
 
                   <div className="flex items-center justify-end gap-3 pt-2">
                     <button
                       onClick={() => setSelectedFinding(null)}
-                      className="px-4 py-2 rounded-xl text-xs font-medium text-mute hover:text-ink hover:bg-white/5 transition-colors"
+                      className="btn-ghost text-xs"
                     >
                       Close Window
                     </button>
                     <button
                       onClick={handleExecuteReview}
                       disabled={isSubmittingReview}
-                      className="btn-primary px-5 py-2 text-xs font-bold"
+                      className="btn-primary text-xs"
                     >
                       {isSubmittingReview ? 'Recording Action...' : 'Submit Review Decision'}
                     </button>
@@ -823,6 +820,6 @@ export const SecurityDashboardView: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };

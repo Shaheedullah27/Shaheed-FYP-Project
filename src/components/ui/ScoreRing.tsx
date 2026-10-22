@@ -34,12 +34,12 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
   const activeTone = tone ?? scoreTone(safeValue);
   const color =
     activeTone === 'good'
-      ? '#34D399'
+      ? '#79F2C0'
       : activeTone === 'warn'
-      ? '#FBBF24'
+      ? '#F4BD73'
       : activeTone === 'bad'
-      ? '#FB7185'
-      : '#35E7FF';
+      ? '#FF777F'
+      : '#62D9F5';
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -75,7 +75,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
           <defs>
             <linearGradient id={`ring-grad-${activeTone}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={color} />
-              <stop offset="100%" stopColor={activeTone === 'ion' ? '#8B5CFF' : color} stopOpacity={0.75} />
+              <stop offset="100%" stopColor={activeTone === 'ion' ? '#A99BFF' : color} stopOpacity={0.75} />
             </linearGradient>
           </defs>
           <circle

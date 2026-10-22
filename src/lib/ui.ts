@@ -12,26 +12,29 @@ export const scoreTone = (score: number): 'ion' | 'good' | 'warn' | 'bad' => {
   return 'bad';
 };
 
-/** Tailwind class sets for each tone — keeps colors consistent everywhere. */
+/** Tailwind class sets for each tone — aligned with our core tokens */
 export const toneText: Record<string, string> = {
-  ion: 'text-[#7DEFFF]',
-  good: 'text-emerald-300',
-  warn: 'text-amber-300',
-  bad: 'text-rose-300',
+  ion: 'text-[#62D9F5]',
+  good: 'text-[#79F2C0]',
+  warn: 'text-[#F4BD73]',
+  bad: 'text-[#FF777F]',
+  violet: 'text-[#A99BFF]',
 };
 
 export const toneFill: Record<string, string> = {
-  ion: 'bg-[#35E7FF]',
-  good: 'bg-emerald-400',
-  warn: 'bg-amber-400',
-  bad: 'bg-rose-400',
+  ion: 'bg-[#62D9F5]',
+  good: 'bg-[#79F2C0]',
+  warn: 'bg-[#F4BD73]',
+  bad: 'bg-[#FF777F]',
+  violet: 'bg-[#A99BFF]',
 };
 
 export const toneTag: Record<string, string> = {
-  ion: 'tag-ion',
-  good: 'tag-ok',
+  ion: 'tag-cyan',
+  good: 'tag-mint',
   warn: 'tag-warn',
   bad: 'tag-bad',
+  violet: 'tag-violet',
 };
 
 /** True when the user asked the OS for reduced motion. */

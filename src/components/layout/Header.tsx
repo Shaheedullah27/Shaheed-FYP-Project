@@ -42,23 +42,23 @@ export const Header: React.FC<HeaderProps> = ({
   const current = TAB_TITLES[activeTab] || { title: 'Workspace', breadcrumb: 'AI ResumeMatch' };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-6 px-5 md:px-6 py-3 bg-[#070B14]/82 backdrop-blur-md border-b border-white/10">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-6 px-5 md:px-6 py-3 bg-[#0B0D12]/85 backdrop-blur-md border-b border-white/[0.08]">
       {/* Zone 1: Mobile menu + breadcrumb trail */}
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleMobileNav}
           aria-label="Open menu"
-          className="lg:hidden shrink-0 p-2 -ml-1 rounded-lg text-mute hover:text-ink hover:bg-white/5 border border-white/10 transition-colors"
+          className="lg:hidden shrink-0 p-2 -ml-1 rounded-lg text-silver hover:text-porcelain hover:bg-white/[0.04] border border-white/[0.08] transition-colors"
         >
           <Menu className="w-4.5 h-4.5" />
         </button>
-        <div className="flex items-center gap-2.5 text-xs font-medium text-mute whitespace-nowrap">
+        <div className="flex items-center gap-2.5 text-xs font-medium text-silver whitespace-nowrap">
           <span className="hidden sm:inline">AI ResumeMatch</span>
           <span aria-hidden="true" className="hidden sm:inline text-white/20">/</span>
-          <span className="text-ink font-semibold flex items-center gap-1.5">
+          <span className="font-heading text-porcelain font-semibold flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="w-1.5 h-1.5 rounded-full bg-[#35E7FF] shadow-[0_0_8px_rgba(53,231,255,0.9)]"
+              className="w-1.5 h-1.5 rounded-full bg-[#79F2C0] shadow-[0_0_8px_rgba(121,242,192,0.8)]"
             />
             {current.breadcrumb}
           </span>
@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="seg-btn"
             aria-pressed={engineMode === 'browser'}
           >
-            In this browser
+            In-Browser Engine
           </button>
           <button
             onClick={() => onToggleEngineMode('flask')}
@@ -83,14 +83,14 @@ export const Header: React.FC<HeaderProps> = ({
             aria-pressed={engineMode === 'flask'}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>Python backend</span>
+            <span>Python Backend</span>
           </button>
         </div>
 
         {hasActiveAnalysis && activeTab !== 'results' && (
           <button
             onClick={() => onTabChange('results')}
-            className="flex items-center gap-1.5 text-[#7DEFFF] hover:text-[#35E7FF] transition-colors whitespace-nowrap shrink-0 font-semibold"
+            className="flex items-center gap-1.5 text-[#62D9F5] hover:text-[#79F2C0] transition-colors whitespace-nowrap shrink-0 font-medium"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>View latest results</span>
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onNewAnalysis}
           aria-label="Start a new comparison"
           title="New comparison"
-          className="btn-primary px-2 sm:px-4 py-2 text-xs whitespace-nowrap shrink-0"
+          className="btn-primary px-3 sm:px-4 py-2 text-xs whitespace-nowrap shrink-0"
         >
           <Sparkles className="w-3.5 h-3.5" strokeWidth={2.4} />
           <span className="hidden sm:inline">New comparison</span>
