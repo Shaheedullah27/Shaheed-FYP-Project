@@ -161,10 +161,7 @@ export type ActiveTab =
   | 'results' 
   | 'skills' 
   | 'ats-checker'
-<<<<<<< HEAD
-=======
   | 'security'
->>>>>>> origin/main
   | 'history' 
   | 'dictionary'
   | 'backend-guide'
@@ -178,8 +175,6 @@ export interface SampleDocument {
   text: string;
   skillsCount: number;
 }
-<<<<<<< HEAD
-=======
 
 export type SecuritySeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type SecurityConfidence = 'VERIFIED' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -273,5 +268,3 @@ export interface SecurityAuditLogEntry {
   reason?: string;
   details_json?: string;
 }
-
->>>>>>> origin/main

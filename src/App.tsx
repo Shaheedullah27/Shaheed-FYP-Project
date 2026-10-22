@@ -8,10 +8,7 @@ import { AnalyzeView } from './components/analyze/AnalyzeView';
 import { ResultsView } from './components/results/ResultsView';
 import { SkillGapView } from './components/skills/SkillGapView';
 import { AtsCompatibilityView } from './components/ats/AtsCompatibilityView';
-<<<<<<< HEAD
-=======
 import { SecurityDashboardView } from './components/security/SecurityDashboardView';
->>>>>>> origin/main
 import { DictionaryView } from './components/dictionary/DictionaryView';
 import { HistoryView } from './components/history/HistoryView';
 import { BackendGuideView } from './components/architecture/BackendGuideView';
@@ -272,13 +269,10 @@ export default function App() {
                   />
                 )}
 
-<<<<<<< HEAD
-=======
                 {activeTab === 'security' && (
                   <SecurityDashboardView />
                 )}
 
->>>>>>> origin/main
                 {activeTab === 'dictionary' && (
                   <DictionaryView />
                 )}

@@ -171,8 +171,6 @@ export async function runAnalysis(
   const result = analyzeResumeAndJob(resumeText, jobDescriptionText, resumeTitle, jobTitle);
   return { result, source: 'browser' };
 }
-<<<<<<< HEAD
-=======
 
 // ==============================================================================
 // RESUME SECURITY & QUARANTINE API CLIENT
@@ -466,5 +464,3 @@ export async function updateSecurityPolicy(policyKey: string, policyValue: any, 
     return true;
   }
 }
-
->>>>>>> origin/main
