@@ -2,6 +2,7 @@ export * from './AnimatedNumber';
 export * from './Badge';
 export * from './Button';
 export * from './ConfirmDialog';
+export * from './Disclosure';
 export * from './GlowPanel';
 export * from './Input';
 export * from './ScoreRing';

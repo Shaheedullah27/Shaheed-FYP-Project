@@ -1,69 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { Loader2, CheckCircle2, FileText, Cpu, BarChart2 } from 'lucide-react';
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface LoadingSpinnerProps {
-  onComplete?: () => void;
+  /** Plain-language description of the work being done. */
   message?: string;
+  /** Optional second line with honest expectations (no invented percentages). */
+  hint?: string;
 }
 
-const STEPS = [
-  { label: 'Reading the resume and job posting...', icon: FileText },
-  { label: 'Checking for listed skills...', icon: Cpu },
-  { label: 'Comparing the words they use...', icon: BarChart2 },
-  { label: 'Preparing your results...', icon: CheckCircle2 }
-];
-
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, 450);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center justify-center p-8 panel max-w-md mx-auto text-center">
-      <div className="relative mb-5">
-        <div className="w-14 h-14 rounded-full border-3 border-white/10 border-t-[#79F2C0] animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 text-[#79F2C0] animate-pulse" />
-        </div>
-      </div>
-
-      <h3 className="text-base font-heading font-bold text-porcelain mb-1">
-        {message || 'Comparing your resume and the job posting'}
-      </h3>
-      <p className="text-xs text-silver mb-6">
-        This may take a few seconds.
-      </p>
-
-      <div className="w-full space-y-2.5 text-left border-t border-white/[0.08] pt-4">
-        {STEPS.map((step, idx) => {
-          const isDone = idx < currentStep;
-          const isCurrent = idx === currentStep;
-          const Icon = step.icon;
-
-          return (
-            <div 
-              key={idx}
-              className={`flex items-center gap-3 text-xs transition-opacity duration-200 ${
-                isDone ? 'text-[#79F2C0] font-medium' : isCurrent ? 'text-[#62D9F5] font-semibold' : 'text-silver/60'
-              }`}
-            >
-              <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                {isDone ? (
-                  <CheckCircle2 className="w-4 h-4 text-[#79F2C0]" />
-                ) : (
-                  <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'animate-pulse text-[#62D9F5]' : 'text-silver/60'}`} />
-                )}
-              </div>
-              <span className="truncate">{step.label}</span>
-            </div>
-          );
-        })}
-      </div>
+/**
+ * Honest indeterminate loading state.
+ *
+ * The analysis engine does not report real progress, so this deliberately
+ * shows motion without percentages or fake completed stages.
+ */
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  message = 'Analyzing your resume…',
+  hint = 'This usually takes a few seconds. Keep this tab open.',
+}) => (
+  <div
+    role="status"
+    aria-live="polite"
+    className="mx-auto flex w-full max-w-xl flex-col items-center rounded-2xl border border-white/[0.08] bg-graphite p-8 text-center sm:p-10"
+  >
+    <div className="relative mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-mint/30 bg-mint/10 text-mint">
+      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
     </div>
-  );
-};
+
+    <h2 className="font-heading text-lg font-semibold text-porcelain">{message}</h2>
+    <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-silver">{hint}</p>
+
+    <div
+      aria-hidden="true"
+      className="mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/[0.07]"
+    >
+      <div className="loading-track h-full w-1/3 rounded-full bg-mint" />
+    </div>
+    <span className="sr-only">Working. No progress percentage is available.</span>
+  </div>
+);
+
+export default LoadingSpinner;

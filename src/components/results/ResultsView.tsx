@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -7,583 +6,776 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
 } from 'recharts';
 import {
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
   Download,
   Copy,
-  TrendingUp,
-  FileText,
-  Info,
   Check,
-  HelpCircle,
-  BookOpen,
-  ShieldCheck
+  ShieldCheck,
+  Info,
+  CheckCircle2,
+  FileText,
+  Sparkles,
+  ListChecks,
+  Target,
+  TrendingUp,
+  Bot,
+  MessageSquareQuote,
 } from 'lucide-react';
-import { AnalysisResult, ActiveTab } from '../../types';
-import {
-  downloadHtmlReport,
-  downloadMarkdownReport
-} from '../../services/reportGenerator';
-import { GlowPanel } from '../ui/GlowPanel';
+import { AnalysisResult, ActiveTab, AiInsightSection, AiInsightsBlock } from '../../types';
+import { downloadHtmlReport, downloadMarkdownReport } from '../../services/reportGenerator';
+import { VersionContext } from '../../services/progress';
+import { Button } from '../ui/Button';
+import { Disclosure } from '../ui/Disclosure';
 import { ScoreRing } from '../ui/ScoreRing';
-import { AnimatedNumber } from '../ui/AnimatedNumber';
-import { cn, riseIn, stagger, scoreTone, toneText, toneFill } from '../../lib/ui';
+import { cn, scoreTone, toneText, toneFill } from '../../lib/ui';
 
 interface ResultsViewProps {
   analysis: AnalysisResult;
   onTabChange: (tab: ActiveTab) => void;
   onNewAnalysis: () => void;
+  /** Explains a fallback, e.g. the backend was unavailable. */
+  engineNotice?: string | null;
+  /** Where this result sits among repeated analyses of the same role. */
+  versionContext?: VersionContext | null;
+  onOpenProgress?: () => void;
 }
+
+const matchLabel = (score: number) => {
+  if (score >= 75) return 'Strong match';
+  if (score >= 55) return 'Partial match';
+  if (score >= 40) return 'Weak match';
+  return 'Low match';
+};
+
+const matchToneClass = (score: number) =>
+  score >= 75 ? 'tag-mint' : score >= 55 ? 'tag-cyan' : score >= 40 ? 'tag-warn' : 'tag-bad';
+
+const AiInsightList: React.FC<{ section: AiInsightSection; tone: 'mint' | 'warn' | 'ion' }> = ({
+  section,
+  tone,
+}) => {
+  const toneClass = tone === 'mint' ? 'text-mint' : tone === 'warn' ? 'text-amber-warn' : 'text-ion';
+  if (!section.items.length) {
+    return (
+      <p className="mt-1 text-xs text-silver">No specific items were returned for this section.</p>
+    );
+  }
+  return (
+    <ul className="mt-1.5 space-y-1.5">
+      {section.items.map((item, index) => (
+        <li key={index} className="flex items-start gap-2 text-xs leading-relaxed text-silver">
+          <span className={cn('mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current', toneClass)} />
+          <span className="min-w-0">{item}</span>
+        </li>
+      ))
+      }
+    </ul>
+  );
+};
+
+/**
+ * Optional Gemini contextual insights. Never influences or replaces the
+ * local numeric scores above; it is advisory commentary in its own panel.
+ */
+const AiInsightsPanel: React.FC<{ block: AiInsightsBlock }> = ({ block }) => {
+  if (block.status === 'declined' || !block) return null;
+
+  if (block.status !== 'available' || !block.insights) {
+    return (
+      <section
+        className="panel p-5"
+        aria-label="Optional AI insights"
+      >
+        <h2 className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+          <Bot className="h-4 w-4 text-silver" aria-hidden="true" />
+          AI insights
+        </h2>
+        <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3.5">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-silver" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-silver">
+              {block.status === 'unavailable' || block.status === 'error'
+                ? 'AI insights temporarily unavailable'
+                : 'AI insights not generated'}
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed text-silver">
+              {block.reason ||
+                'The optional Gemini step did not return insights this run; the local analysis above is complete and unaffected.'}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const insights = block.insights;
+  return (
+    <section className="panel luxe-panel p-5 sm:p-6" aria-label="Optional AI insights from Gemini">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+          <Bot className="h-4 w-4 text-ion" aria-hidden="true" />
+          AI insights from Gemini
+        </h2>
+        <span className="tag tag-cyan">AI insights available</span>
+      </div>
+
+      <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3.5">
+        <MessageSquareQuote className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-silver">Experience alignment</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-silver">{insights.experienceAlignment}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <h3 className="text-sm font-semibold text-mint">Strengths & transferable skills</h3>
+          <AiInsightList section={insights.strengths} tone="mint" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-amber-warn">Missing or weakly demonstrated skills</h3>
+          <AiInsightList section={insights.skillGaps} tone="warn" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-porcelain">Prioritized improvements</h3>
+          <AiInsightList section={insights.prioritizedImprovements} tone="ion" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-porcelain">ATS keywords from this posting</h3>
+          <AiInsightList section={insights.atsKeywordRecommendations} tone="ion" />
+        </div>
+        <div className="sm:col-span-2">
+          <h3 className="text-sm font-semibold text-porcelain">Bullet point improvements</h3>
+          <p className="mt-0.5 text-xs leading-relaxed text-silver">
+            Rewording suggestions for bullets already in your resume — they never invent new
+            achievements, experience, qualifications, or metrics.
+          </p>
+          <AiInsightList section={insights.bulletPointImprovements} tone="ion" />
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs leading-relaxed text-silver">
+        {block.aiDisclaimer ||
+          'AI-generated assessment based only on the resume and job description provided. It is advisory text and does not change the local match scores shown above.'}
+      </p>
+    </section>
+  );
+};
+
+const RECOMMENDATION_ORDER: Record<string, number> = {
+  critical: 0,
+  improvement: 1,
+  strength: 2,
+};
+
+const versionMessage = (context: VersionContext): string => {
+  if (context.currentNumber <= 1) {
+    return context.total > 1
+      ? `This is the first of ${context.total} analyses for this role. Open Progress to see how the score changed.`
+      : `First saved analysis for “${context.jobTitle}”. Run this role again after changes to track your score.`;
+  }
+
+  const base = `Analysis ${context.currentNumber} of ${context.total} for this role`;
+  if (context.delta === null) return `${base}.`;
+  if (context.delta > 0) return `${base} — ${context.delta} points higher than your previous result.`;
+  if (context.delta < 0) {
+    return `${base} — ${Math.abs(context.delta)} points lower than your previous result.`;
+  }
+  return `${base} — the same score as your previous result.`;
+};
 
 export const ResultsView: React.FC<ResultsViewProps> = ({
   analysis,
   onTabChange,
   onNewAnalysis,
+  engineNotice,
+  versionContext,
+  onOpenProgress,
 }) => {
   const [copied, setCopied] = useState(false);
   const [selectedTermFilter, setSelectedTermFilter] = useState<'all' | 'skills' | 'keywords'>('all');
-  const [showFormulaModal, setShowFormulaModal] = useState(false);
 
-  const filteredTermWeights = analysis.topTermWeights.filter(t => {
-    if (selectedTermFilter === 'skills') return t.isSkill;
-    if (selectedTermFilter === 'keywords') return !t.isSkill;
+  const overallTone = scoreTone(analysis.overallScore);
+  const report = analysis.atsCompatibilityReport;
+  const atsScore = report?.atsScore ?? analysis.atsReadabilityScore;
+
+  const sortedRecommendations = useMemo(
+    () =>
+      [...analysis.recommendations].sort(
+        (a, b) => (RECOMMENDATION_ORDER[a.type] ?? 2) - (RECOMMENDATION_ORDER[b.type] ?? 2)
+      ),
+    [analysis.recommendations]
+  );
+  const improvements = sortedRecommendations.filter(item => item.type !== 'strength');
+  const strengths = sortedRecommendations.filter(item => item.type === 'strength');
+
+  const atsItems = useMemo(
+    () =>
+      (report?.checks || [])
+        .filter(check => check.status === 'fail' || check.status === 'warning' || check.status === 'unverified')
+        .slice(0, 3),
+    [report]
+  );
+
+  const filteredTermWeights = analysis.topTermWeights.filter(term => {
+    if (selectedTermFilter === 'skills') return term.isSkill;
+    if (selectedTermFilter === 'keywords') return !term.isSkill;
     return true;
   });
 
-  const overallTone = scoreTone(analysis.overallScore);
-  const skillTone = scoreTone(analysis.skillMatchScore);
-
-  const copyReportSummary = () => {
-    const text = `AI ResumeMatch Analysis Report
---------------------------------------
+  const copyReportSummary = async () => {
+    const text = `AI ResumeMatch — comparison summary
 Resume: ${analysis.resumeTitle}
-Target Role: ${analysis.jobTitle}
-Overall score: ${analysis.overallScore}%
-Text match: ${analysis.cosineSimilarity}%
+Target role: ${analysis.jobTitle}
+Overall match: ${analysis.overallScore}% (${matchLabel(analysis.overallScore)})
+Text similarity: ${analysis.cosineSimilarity}%
 Skill match: ${analysis.skillMatchScore}%
-ATS readability: ${analysis.atsReadabilityScore}%
+ATS readability: ${atsScore}%
 
-Matched Skills (${analysis.matchedSkills.length}):
-${analysis.matchedSkills.map(s => `• ${s.name} (${s.category})`).join('\n')}
+Skills found in the resume (${analysis.matchedSkills.length}):
+${analysis.matchedSkills.map(skill => `- ${skill.name}`).join('\n') || '- None'}
 
-Missing Skills (${analysis.missingSkills.length}):
-${analysis.missingSkills.map(s => `• ${s.name} [${s.importance}] (${s.category})`).join('\n')}
+Skills requested but not found (${analysis.missingSkills.length}):
+${analysis.missingSkills.map(skill => `- ${skill.name} (${skill.importance})`).join('\n') || '- None'}
 
-Suggestions:
-${analysis.recommendations.map(r => `• ${r.title}\n  Try this: ${r.suggestedAction}`).join('\n')}
+What to improve:
+${improvements.map(item => `- ${item.title}: ${item.suggestedAction}`).join('\n') || '- No changes suggested'}
 
-Note: These scores show how the resume compares with the job posting. They do not predict whether you will get hired.
-`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+These scores compare wording and skills in the two documents. They do not predict hiring outcomes.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   const downloadReportJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(analysis, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `ai-resumematch-${analysis.id}.json`);
-    dlAnchorElem.click();
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(analysis, null, 2));
+    const link = document.createElement('a');
+    link.setAttribute('href', dataStr);
+    link.setAttribute('download', `ai-resumematch-${analysis.id}.json`);
+    link.click();
   };
 
-  const kpis = [
-    {
-      key: 'skills',
-      label: 'Skill Match Rate',
-      value: analysis.skillMatchScore,
-      tone: skillTone,
-      badge: `${analysis.matchedSkills.length}/${analysis.matchedSkills.length + analysis.missingSkills.length} skills`,
-      desc: `Found ${analysis.matchedSkills.length} job skills in the resume; ${analysis.missingSkills.length} were not found.`,
-    },
-    {
-      key: 'keywords',
-      label: 'Keyword Density',
-      value: analysis.keywordDensityScore,
-      tone: scoreTone(analysis.keywordDensityScore),
-      badge: `${analysis.topTermWeights.length} top terms`,
-      desc: 'How strongly the resume’s most important terms align with the vocabulary of the job posting.',
-    },
-  ];
-
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={stagger}
-      className="space-y-7"
-    >
-      {/* Top Bar Banner with Actions */}
-      <motion.div variants={riseIn}>
-        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[11px] text-silver mb-1.5 font-mono">
-              <span>{analysis.timestamp}</span>
-              <span aria-hidden="true">·</span>
-              <span className="font-sans">Resume and job comparison</span>
-            </div>
-            <h1 className="text-lg sm:text-xl font-heading font-extrabold tracking-tight text-porcelain truncate">
-              {analysis.resumeTitle} <span className="text-[#62D9F5]">↔</span> {analysis.jobTitle}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <button
-              onClick={() => downloadHtmlReport(analysis)}
-              className="btn-primary px-3.5 py-2 text-xs cursor-pointer"
-              title="Download an HTML report or print it as PDF"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download report</span>
-            </button>
-            <button
-              onClick={() => downloadMarkdownReport(analysis)}
-              className="btn-ghost px-3 py-2 text-xs cursor-pointer"
-              title="Download a markdown text report"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Text report</span>
-            </button>
-            <button onClick={copyReportSummary} className="btn-ghost px-3 py-2 text-xs cursor-pointer">
-              {copied ? <Check className="w-3.5 h-3.5 text-[#79F2C0]" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Copy summary'}</span>
-            </button>
-            <button onClick={downloadReportJson} className="btn-ghost px-3 py-2 text-xs cursor-pointer">
-              <span>JSON</span>
-            </button>
-            <button onClick={onNewAnalysis} className="btn-ghost px-3.5 py-2 text-xs cursor-pointer">
-              <span>New comparison</span>
-            </button>
-          </div>
-        </GlowPanel>
-      </motion.div>
-
-      {/* Mandatory Objective Disclaimer Notice */}
-      <motion.div
-        variants={riseIn}
-        role="note"
-        className="p-4 bg-[#62D9F5]/8 border border-[#62D9F5]/25 rounded-xl text-xs text-porcelain flex items-start gap-3"
-      >
-        <Info className="w-4 h-4 text-[#62D9F5] shrink-0 mt-0.5" />
-        <div className="leading-relaxed">
-          <span className="font-bold text-porcelain">About these scores: </span>
-          <span className="text-silver">
-            They evaluate how closely the wording and technical skills in your resume align with the
-            job description. They do not predict hiring probability, nor do they represent an employer's official vendor ATS algorithm.
-          </span>
+    <div className="mx-auto w-full max-w-4xl space-y-5">
+      {/* Header + actions */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs text-silver">{analysis.timestamp} · Resume compared with a job description</p>
+          <h2 className="mt-1 truncate font-heading text-xl font-semibold tracking-tight text-porcelain sm:text-2xl">
+            {analysis.jobTitle}
+          </h2>
+          <p className="mt-0.5 truncate text-sm text-silver">
+            {analysis.resumeTitle}
+            {analysis.companyName ? ` · ${analysis.companyName}` : ''}
+          </p>
         </div>
-      </motion.div>
-
-      {/* ============================================================
-          Scorecard: composite + circular similarity + ATS indicator
-          ============================================================ */}
-      <motion.section
-        variants={riseIn}
-        aria-label="Score summary"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-5"
-      >
-        {/* Composite match */}
-        <GlowPanel glow className="p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">
-                Composite Match
-              </span>
-              <span
-                className={cn(
-                  'text-[10px] font-bold px-2 py-0.5 rounded-full border',
-                  overallTone === 'good'
-                    ? 'tag-ok'
-                    : overallTone === 'ion'
-                    ? 'tag-ion'
-                    : overallTone === 'warn'
-                    ? 'tag-warn'
-                    : 'tag-bad'
-                )}
-              >
-                {analysis.overallScore >= 75 ? 'Strong match' : analysis.overallScore >= 55 ? 'Partial match' : 'Room to improve'}
-              </span>
-            </div>
-            <div className={cn('text-5xl font-extrabold font-mono tabular-nums mb-2', toneText[overallTone])}>
-              <AnimatedNumber value={analysis.overallScore} suffix="%" />
-            </div>
-            <p className="text-xs text-mute leading-relaxed">
-              Combines the text match, matching skills, keywords, and how easy the resume is to read.
-            </p>
-          </div>
-          <div className="mt-5">
-            <div className="w-full bg-white/8 h-2.5 rounded-full overflow-hidden">
-              <motion.div
-                className={cn('h-full rounded-full', toneFill[overallTone])}
-                initial={{ width: 0 }}
-                animate={{ width: `${analysis.overallScore}%` }}
-                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-                style={{ boxShadow: '0 0 14px rgba(53,231,255,0.5)' }}
-              />
-            </div>
-            <div className="flex items-center justify-between mt-2.5 text-[11px] text-mute">
-              <span>Weighted: text × 0.40 · skills × 0.35 · keywords × 0.15 · ATS × 0.10</span>
-              <button
-                onClick={() => setShowFormulaModal(!showFormulaModal)}
-                className="flex items-center gap-1 text-[#62D9F5] hover:text-[#79F2C0] font-semibold transition-colors cursor-pointer"
-                aria-expanded={showFormulaModal}
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>Formula</span>
-              </button>
-            </div>
-          </div>
-        </GlowPanel>
-
-        {/* Circular resume ↔ job similarity */}
-        <GlowPanel glow className="p-6 flex items-center justify-center">
-          <ScoreRing
-            value={analysis.cosineSimilarity}
-            label="Resume ↔ job text similarity"
-            sublabel="Cosine similarity of TF-IDF word weights — how much the two documents' wording overlaps. Not a hiring probability."
-            size={186}
-          />
-        </GlowPanel>
-
-        {/* Separate ATS readability indicator */}
-        <GlowPanel
-          glow
-          className="p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#35E7FF]/40"
-        >
-          <button
-            onClick={() => onTabChange('ats-checker')}
-            className="flex flex-col items-center group"
-            aria-label="Open the full ATS readability audit"
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => downloadHtmlReport(analysis)}
+            leftIcon={<Download className="h-4 w-4" />}
+            title="Download a full report you can print or save as PDF"
           >
-            <ScoreRing
-              value={analysis.atsReadabilityScore}
-              label="ATS readability"
-              size={186}
-              tone="ion"
-            />
-            <span className="mt-3 text-[11px] text-mute text-center max-w-[16rem] leading-relaxed">
-              Checks whether contact details and common resume sections are easy to find. An internal
-              readability check — not an official vendor ATS score.
-            </span>
-            <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#62D9F5] group-hover:text-[#79F2C0] transition-colors">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Open full ATS audit
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </button>
-        </GlowPanel>
-      </motion.section>
+            Download report
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onNewAnalysis}
+            leftIcon={<Sparkles className="h-4 w-4" />}
+          >
+            Analyze another
+          </Button>
+        </div>
+      </header>
 
-      {/* Formula Explanation Accordion */}
-      {showFormulaModal && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden"
-        >
-          <GlowPanel className="p-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-ink">
-              <BookOpen className="w-4 h-4 text-[#7DEFFF]" />
-              <span>How the scores are calculated</span>
-            </div>
-            <div className="text-xs text-mute space-y-2 leading-relaxed">
-              <p>
-                <strong className="text-ink">1. Word frequency:</strong> Words that appear more often count more, but repeating them many times adds less and less. Formula: tf(t, d) = 1 + ln(frequency).
-              </p>
-              <p>
-                <strong className="text-ink">2. Word importance:</strong> Uncommon words get more weight than words used everywhere. Formula: idf(t) = ln((1 + N)/(1 + df)) + 1.
-              </p>
-              <p>
-                <strong className="text-ink">3. Text match:</strong> The app compares the word patterns in both documents. A higher score means more overlap. Formula: cos(θ) = (u · v) / (||u||₂ × ||v||₂).
-              </p>
-              <p>
-                <strong className="text-ink">4. Overall score:</strong>{' '}
-                <code className="font-mono text-[#7DEFFF] bg-white/5 px-1.5 py-0.5 rounded">
-                  Text match × 0.40 + Skills × 0.35 + Keywords × 0.15 + ATS readability × 0.10
-                </code>
-                .
-              </p>
-            </div>
-          </GlowPanel>
-        </motion.div>
+      {engineNotice && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-warn/25 bg-amber-warn/[0.06] p-3.5 text-xs leading-relaxed text-silver">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-warn" aria-hidden="true" />
+          <span>{engineNotice}</span>
+        </div>
       )}
 
-      {/* KPI metric cards (skills rate + supporting metrics) */}
-      <motion.section
-        variants={riseIn}
-        className="grid grid-cols-1 md:grid-cols-2 gap-5"
-      >
-        {kpis.map((kpi) => (
-          <GlowPanel key={kpi.key} glow className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">
-                {kpi.label}
-              </span>
-              <span className="tag tag-mute font-mono">{kpi.badge}</span>
-            </div>
-            <div className={cn('text-4xl font-extrabold font-mono tabular-nums mb-2', toneText[kpi.tone])}>
-              <AnimatedNumber value={kpi.value} suffix="%" />
-            </div>
-            <p className="text-xs text-mute leading-relaxed">{kpi.desc}</p>
-            <div className="w-full bg-white/8 h-2.5 rounded-full overflow-hidden mt-4">
-              <motion.div
-                className={cn('h-full rounded-full', toneFill[kpi.tone])}
-                initial={{ width: 0 }}
-                animate={{ width: `${kpi.value}%` }}
-                transition={{ duration: 1.1, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </div>
-          </GlowPanel>
-        ))}
-      </motion.section>
-
-      {/* Category Breakdown Progress Bars */}
-      <motion.section variants={riseIn}>
-        <GlowPanel glow className="p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-base font-bold text-ink">Skill matches by category</h2>
-              <p className="text-xs text-mute mt-0.5">See which skills from the job posting were found in your resume.</p>
-            </div>
+      {versionContext && (
+        <div className="flex flex-col gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2 text-xs leading-relaxed text-silver">
+            <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ion" aria-hidden="true" />
+            <span>{versionMessage(versionContext)}</span>
+          </p>
+          {onOpenProgress && (
             <button
-              onClick={() => onTabChange('skills')}
-              className="text-xs font-semibold text-[#62D9F5] hover:text-[#79F2C0] transition-colors flex items-center gap-1"
+              type="button"
+              onClick={onOpenProgress}
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ion transition-colors hover:text-mint"
             >
-              <span>See all skill gaps</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              See progress
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
+          )}
+        </div>
+      )}
+
+      {/* A. Overall match */}
+      <section className="panel p-5 sm:p-6" aria-labelledby="overall-match-heading">
+        <div className="grid items-center gap-6 md:grid-cols-[auto_1fr]">
+          <div className="flex justify-center">
+            <ScoreRing value={analysis.overallScore} label="Overall match" size={172} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {analysis.categoryGaps.map((cat) => (
-              <div
-                key={cat.category}
-                className="p-4 bg-white/[0.03] border border-white/10 rounded-xl hover:border-white/20 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-ink">{cat.category}</span>
-                  <span className="text-xs font-mono font-bold text-ink">{cat.matchPercentage}%</span>
+          <div className="min-w-0">
+            <span className={cn('tag', matchToneClass(analysis.overallScore))}>
+              {matchLabel(analysis.overallScore)}
+            </span>
+            <h2
+              id="overall-match-heading"
+              className="mt-2.5 font-heading text-lg font-semibold text-porcelain"
+            >
+              Your resume covers {analysis.overallScore}% of this job description
+            </h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-silver">
+              This score combines how much the wording overlaps, how many required skills appear in
+              your resume, how well key terms line up, and how easy the resume is for an ATS to read.
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-silver">
+              It is a text comparison, not a hiring probability or a guarantee of being shortlisted.
+            </p>
+
+            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[
+                { label: 'Wording overlap', value: analysis.cosineSimilarity },
+                { label: 'Skills matched', value: analysis.skillMatchScore },
+                { label: 'ATS readability', value: atsScore },
+              ].map(metric => (
+                <div key={metric.label} className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
+                  <dt className="text-[11px] text-silver">{metric.label}</dt>
+                  <dd className={cn('mt-0.5 font-mono text-lg font-semibold tabular-nums', toneText[scoreTone(metric.value)])}>
+                    {Math.round(metric.value)}%
+                  </dd>
                 </div>
-                <div className="w-full bg-white/8 h-2 rounded-full overflow-hidden mb-2.5">
-                  <motion.div
-                    className={cn(
-                      'h-full rounded-full',
-                      cat.matchPercentage >= 75
-                        ? 'bg-[#79F2C0]'
-                        : cat.matchPercentage >= 50
-                        ? 'bg-[#62D9F5]'
-                        : 'bg-[#F4BD73]'
-                    )}
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${cat.matchPercentage}%` }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* Optional Gemini AI insights — explicit consent was required per-run */}
+      {analysis.aiInsights ? (
+        <AiInsightsPanel block={analysis.aiInsights} />
+      ) : (
+        <p className="px-1 text-xs text-silver">
+          No AI insights were generated for this run. Enable “Add AI insights (optional)” on the
+          analyze screen to include contextual Gemini commentary; the local analysis is complete
+          without it.
+        </p>
+      )}
+
+      {/* B + C. Matches and gaps */}
+      <div className="grid gap-5 md:grid-cols-2">
+        <section className="panel p-5" aria-labelledby="matches-heading">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="matches-heading" className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+              <CheckCircle2 className="h-4 w-4 text-mint" aria-hidden="true" />
+              What already matches
+            </h2>
+            <span className="font-mono text-xs text-silver">
+              {analysis.matchedSkills.length} found
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-silver">
+            Skills from the job description that also appear in your resume.
+          </p>
+
+          {analysis.matchedSkills.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {analysis.matchedSkills.slice(0, 10).map(skill => (
+                <li
+                  key={skill.name}
+                  className="rounded-md border border-mint/25 bg-mint/10 px-2.5 py-1 text-xs font-medium text-mint"
+                  title={`${skill.category} · ${skill.importance}`}
+                >
+                  {skill.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-silver">
+              No matching skills were detected. Add concrete tools and technologies you have really
+              used to your resume.
+            </p>
+          )}
+
+          {analysis.matchedSkills.length > 10 && (
+            <Disclosure summary="All matched skills" count={analysis.matchedSkills.length} className="mt-4">
+              <ul className="flex flex-wrap gap-1.5">
+                {analysis.matchedSkills.map(skill => (
+                  <li key={skill.name} className="rounded-md border border-mint/20 bg-mint/[0.06] px-2.5 py-1 text-xs text-silver">
+                    {skill.name}
+                  </li>
+                ))}
+              </ul>
+            </Disclosure>
+          )}
+
+          {strengths.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-white/[0.08] pt-3">
+              {strengths.map(item => (
+                <p key={item.id} className="text-xs leading-relaxed text-silver">
+                  <span className="font-semibold text-mint">{item.title}. </span>
+                  {item.description}
+                </p>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="panel p-5" aria-labelledby="gaps-heading">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="gaps-heading" className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+              <AlertTriangle className="h-4 w-4 text-amber-warn" aria-hidden="true" />
+              What is missing or unclear
+            </h2>
+            <span className="font-mono text-xs text-silver">
+              {analysis.missingSkills.length} missing
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-silver">
+            Requested requirements that were not found in your resume text.
+          </p>
+
+          {analysis.missingSkills.length > 0 ? (
+            <>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
+                {analysis.missingSkills.slice(0, 10).map(skill => (
+                  <li
+                    key={skill.name}
+                    className="rounded-md border border-amber-warn/25 bg-amber-warn/10 px-2.5 py-1 text-xs font-medium text-amber-warn"
+                    title={`${skill.category} · ${skill.importance}`}
+                  >
+                    {skill.name}
+                  </li>
+                ))}
+              </ul>
+              {analysis.missingSkills.length > 10 && (
+                <Disclosure summary="All missing skills" count={analysis.missingSkills.length} className="mt-4">
+                  <ul className="flex flex-wrap gap-1.5">
+                    {analysis.missingSkills.map(skill => (
+                      <li key={skill.name} className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-silver">
+                        {skill.name} · {skill.importance}
+                      </li>
+                    ))}
+                  </ul>
+                </Disclosure>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-silver">
+              Every skill listed in the job description was found in your resume.
+            </p>
+          )}
+
+          <p className="mt-4 flex items-start gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-2.5 text-[11px] leading-relaxed text-silver">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-silver" aria-hidden="true" />
+            Only add skills or experience you genuinely have. A gap is a chance to learn or clarify,
+            not something to claim.
+          </p>
+        </section>
+      </div>
+
+      {/* D. How to improve */}
+      <section className="panel p-5 sm:p-6" aria-labelledby="improve-heading">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="improve-heading" className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+            <ListChecks className="h-4 w-4 text-ion" aria-hidden="true" />
+            How to improve
+          </h2>
+          <span className="text-xs text-silver">Most useful first</span>
+        </div>
+        <p className="mt-1 text-sm leading-relaxed text-silver">
+          Practical changes for this specific job description.
+        </p>
+
+        {improvements.length > 0 ? (
+          <ol className="mt-4 space-y-3">
+            {improvements.map((item, index) => (
+              <li
+                key={item.id}
+                className={cn(
+                  'rounded-xl border p-4',
+                  item.type === 'critical'
+                    ? 'border-coral-error/25 bg-coral-error/[0.05]'
+                    : 'border-white/[0.08] bg-white/[0.02]'
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] font-mono text-[11px] font-semibold text-silver">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-porcelain">{item.title}</h3>
+                      <span className="tag tag-mute">{item.targetSection}</span>
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-silver">
+                      <span className="font-semibold text-silver">Why it matters: </span>
+                      {item.description}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-porcelain">
+                      <span className="font-semibold text-mint">What to do: </span>
+                      {item.suggestedAction}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="mt-4 rounded-xl border border-mint/25 bg-mint/[0.05] p-4">
+            <p className="flex items-center gap-2 text-sm font-medium text-porcelain">
+              <CheckCircle2 className="h-4 w-4 text-mint" aria-hidden="true" />
+              No urgent changes found
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-silver">
+              Keep the resume aligned with the role, and make sure each claim is specific and
+              accurate.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* E. ATS compatibility */}
+      <section className="panel p-5 sm:p-6" aria-labelledby="ats-heading">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 id="ats-heading" className="flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+              <ShieldCheck className="h-4 w-4 text-ion" aria-hidden="true" />
+              ATS compatibility
+            </h2>
+            <p className="mt-1 max-w-xl text-xs leading-relaxed text-silver">
+              Checks whether contact details, standard sections, and readable text can be found by
+              an applicant tracking system. This is an estimate, not an official score from any
+              hiring platform.
+            </p>
+          </div>
+          <div className="text-right">
+            <span className={cn('font-mono text-2xl font-semibold tabular-nums', toneText[scoreTone(atsScore)])}>
+              {atsScore}%
+            </span>
+            <span className="block text-[11px] text-silver">estimated readability</span>
+          </div>
+        </div>
+
+        {atsItems.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {atsItems.map(check => (
+              <li key={check.id} className="flex items-start gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-warn" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-semibold text-porcelain">{check.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-silver">{check.message}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4 flex items-center gap-2 rounded-lg border border-mint/25 bg-mint/[0.05] p-3 text-xs text-silver">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-mint" aria-hidden="true" />
+            No parsing problems were found in the checks that could be verified.
+          </p>
+        )}
+
+        <Button
+          variant="secondary"
+          size="md"
+          className="mt-4"
+          onClick={() => onTabChange('ats-checker')}
+          rightIcon={<ArrowRight className="h-4 w-4" />}
+        >
+          Open full ATS report
+        </Button>
+      </section>
+
+      {/* F. Detailed information */}
+      <div className="space-y-3">
+        <h2 className="px-1 font-heading text-base font-semibold text-porcelain">Detailed information</h2>
+
+        <Disclosure
+          summary="Skill matches by category"
+          hint="See which areas are strong and which need attention."
+          count={analysis.categoryGaps.length}
+        >
+          <div className="space-y-4">
+            {analysis.categoryGaps.map(category => (
+              <div key={category.category}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-porcelain">{category.category}</span>
+                  <span className="font-mono text-xs font-semibold text-silver">{category.matchPercentage}%</span>
+                </div>
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                  <div
+                    className={cn('h-full rounded-full', toneFill[scoreTone(category.matchPercentage)])}
+                    style={{ width: `${category.matchPercentage}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-3 text-[11px] text-mute">
-                  <span className="truncate">Matched: {cat.matchedSkills.join(', ') || 'None'}</span>
-                  {cat.missingSkills.length > 0 && (
-                    <span className="text-rose-300 font-medium shrink-0">
-                      Missing: {cat.missingSkills.slice(0, 2).join(', ')}
-                    </span>
-                  )}
-                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-silver">
+                  {category.matchedCount} of {category.totalRequired} found
+                  {category.missingSkills.length > 0
+                    ? ` · not found: ${category.missingSkills.join(', ')}`
+                    : ' · nothing missing'}
+                </p>
               </div>
             ))}
           </div>
-        </GlowPanel>
-      </motion.section>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-4"
+            onClick={() => onTabChange('skills')}
+            rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+          >
+            Open skill gap details
+          </Button>
+        </Disclosure>
 
-      {/* TF-IDF Top Term Weights Comparison Chart */}
-      <motion.section variants={riseIn}>
-        <GlowPanel glow className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-base font-bold text-ink">Important words in each document</h2>
-              <p className="text-xs text-mute mt-0.5">
-                Shows which words and phrases had the most weight in the resume and job posting.
-              </p>
-            </div>
-
-            <div className="seg self-start sm:self-auto" role="group" aria-label="Filter terms">
-              {(['all', 'skills', 'keywords'] as const).map((filter) => (
+        <Disclosure
+          summary="Important words in each document"
+          hint="Which words and phrases carried the most weight in the comparison."
+          lazy
+        >
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-silver">Showing the ten highest-weighted terms.</p>
+            <div className="seg" role="group" aria-label="Filter terms">
+              {(['all', 'skills', 'keywords'] as const).map(filter => (
                 <button
                   key={filter}
+                  type="button"
                   onClick={() => setSelectedTermFilter(filter)}
                   data-active={selectedTermFilter === filter}
-                  className="seg-btn capitalize"
+                  className="seg-btn"
                 >
-                  {filter === 'all' ? 'All words' : filter}
+                  {filter === 'all' ? 'All words' : filter === 'skills' ? 'Skills' : 'Other words'}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="h-72 w-full">
+          <div
+            className="h-64 w-full"
+            role="img"
+            aria-label="Bar chart comparing term weights in the resume and job description"
+          >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={filteredTermWeights.slice(0, 10)}
-                margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-              >
+              <BarChart data={filteredTermWeights.slice(0, 10)} margin={{ top: 10, right: 10, left: 0, bottom: 24 }}>
                 <XAxis
                   dataKey="term"
-                  tick={{ fontSize: 11, fill: '#98A6BE' }}
+                  tick={{ fontSize: 11, fill: 'var(--color-silver)' }}
                   interval={0}
                   angle={-20}
                   textAnchor="end"
-                  axisLine={{ stroke: 'rgba(244,247,255,0.12)' }}
+                  axisLine={{ stroke: 'var(--theme-border-strong)' }}
                   tickLine={false}
                 />
-                <YAxis
-                  tick={{ fontSize: 11, fill: '#98A6BE' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--color-silver)' }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(241,240,234,0.04)' }}
+                  cursor={{ fill: 'rgba(241,235,221,0.05)' }}
                   contentStyle={{
-                    backgroundColor: '#131720',
-                    borderColor: 'rgba(241,240,234,0.12)',
+                    backgroundColor: 'var(--color-graphite)',
+                    borderColor: 'var(--theme-border-strong)',
                     borderRadius: '8px',
-                    color: '#F1F0EA',
+                    color: 'var(--color-porcelain)',
                     fontSize: '12px',
-                    boxShadow: '0 16px 40px -18px rgba(0,0,0,0.9)',
                   }}
-                  labelStyle={{ color: '#79F2C0', fontWeight: 600 }}
-                  itemStyle={{ color: '#F1F0EA' }}
+                  labelStyle={{ color: 'var(--color-mint)', fontWeight: 600 }}
+                  itemStyle={{ color: 'var(--color-porcelain)' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: '#A1A8B5' }} />
-                <Bar dataKey="resumeWeight" name="Resume" fill="#79F2C0" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="jobWeight" name="Job posting" fill="#62D9F5" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: 'var(--color-silver)' }} />
+                <Bar dataKey="resumeWeight" name="Resume" fill="var(--color-mint)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="jobWeight" name="Job description" fill="var(--color-ion)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </GlowPanel>
-      </motion.section>
+        </Disclosure>
 
-      {/* Actionable Recommendations Section */}
-      <motion.section variants={riseIn}>
-        <GlowPanel glow className="p-6">
-          <div className="flex items-center justify-between mb-5">
+        <Disclosure summary="How the score is calculated" hint="The method behind the numbers, in plain terms.">
+          <dl className="space-y-3 text-xs leading-relaxed text-silver">
             <div>
-              <h2 className="text-base font-bold text-ink">Suggestions to improve your resume</h2>
-              <p className="text-xs text-mute mt-0.5">
-                Based on this comparison. Only add skills or experience that are true for you.
-              </p>
+              <dt className="font-semibold text-porcelain">1. Word frequency</dt>
+              <dd>Words that appear more often count more, with diminishing returns so repetition cannot inflate the score.</dd>
             </div>
-            <button
-              onClick={() => onTabChange('skills')}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#7DEFFF] hover:text-[#35E7FF] transition-colors"
+            <div>
+              <dt className="font-semibold text-porcelain">2. Term importance</dt>
+              <dd>Words that are rare across documents weigh more than common words found everywhere.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-porcelain">3. Overall score</dt>
+              <dd>
+                Text similarity × 0.40 + skills × 0.35 + keyword alignment × 0.15 + ATS readability ×
+                0.10.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-porcelain">Limits</dt>
+              <dd>
+                A lexical comparison cannot judge the quality of your experience, seniority, or
+                whether a recruiter will advance your application.
+              </dd>
+            </div>
+          </dl>
+        </Disclosure>
+
+        <Disclosure summary="Report options" hint="Download or copy this analysis.">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => downloadHtmlReport(analysis)}
+              leftIcon={<FileText className="h-3.5 w-3.5" />}
             >
-              <span>View all skills</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              HTML report (print to PDF)
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => downloadMarkdownReport(analysis)}
+              leftIcon={<FileText className="h-3.5 w-3.5" />}
+            >
+              Text report
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={copyReportSummary}
+              leftIcon={copied ? <Check className="h-3.5 w-3.5 text-mint" /> : <Copy className="h-3.5 w-3.5" />}
+            >
+              {copied ? 'Summary copied' : 'Copy summary'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={downloadReportJson}
+              leftIcon={<Download className="h-3.5 w-3.5" />}
+            >
+              JSON data
+            </Button>
           </div>
+        </Disclosure>
+      </div>
 
-          <div className="space-y-4">
-            {analysis.recommendations.map((rec) => {
-              const isCritical = rec.type === 'critical';
-              const isStrength = rec.type === 'strength';
-
-              return (
-                <div
-                  key={rec.id}
-                  className={cn(
-                    'p-4 rounded-xl border transition-all hover:-translate-y-0.5',
-                    isCritical
-                      ? 'bg-rose-500/6 border-rose-400/25 hover:border-rose-400/50'
-                      : isStrength
-                      ? 'bg-emerald-500/6 border-emerald-400/25 hover:border-emerald-400/50'
-                      : 'bg-white/[0.03] border-white/10 hover:border-[#35E7FF]/35'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2.5">
-                      {isCritical ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-300 shrink-0" />
-                      ) : isStrength ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
-                      ) : (
-                        <TrendingUp className="w-4 h-4 text-[#7DEFFF] shrink-0" />
-                      )}
-                      <h3 className="text-xs font-bold text-ink">{rec.title}</h3>
-                    </div>
-
-                    <span className="tag tag-mute font-mono shrink-0">
-                      Section: {rec.targetSection}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-mute mb-2.5 leading-relaxed">{rec.description}</p>
-
-                  <div className="text-xs text-porcelain bg-white/[0.04] p-3 rounded-lg border border-white/[0.08] flex items-start gap-2">
-                    <span className="text-[#79F2C0] font-bold shrink-0">Try this:</span>
-                    <span className="text-silver">{rec.suggestedAction}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </GlowPanel>
-      </motion.section>
-
-      {/* Matched vs Missing Skills Quick Summary Strip */}
-      <motion.section variants={riseIn} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Matched Skills */}
-        <GlowPanel glow className="p-5">
-          <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-              <h3 className="text-xs font-bold text-ink">Skills found ({analysis.matchedSkills.length})</h3>
-            </div>
-            <span className="text-[11px] text-mute">Also listed in your resume</span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {analysis.matchedSkills.map((skill, idx) => (
-              <span
-                key={idx}
-                className="text-xs font-medium text-[#79F2C0] bg-[#79F2C0]/10 border border-[#79F2C0]/25 rounded-md px-2.5 py-1 hover:border-[#79F2C0]/60 transition-colors"
-              >
-                {skill.name}
-              </span>
-            ))}
-            {analysis.matchedSkills.length === 0 && (
-              <p className="text-xs text-silver italic">No matching skills were found.</p>
-            )}
-          </div>
-        </GlowPanel>
-
-        {/* Missing Skills */}
-        <GlowPanel glow className="p-5">
-          <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-[#FF777F]" />
-              <h3 className="text-xs font-bold text-porcelain">Skills not found ({analysis.missingSkills.length})</h3>
-            </div>
-            <span className="text-[11px] text-silver">Listed in the job posting</span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {analysis.missingSkills.map((skill, idx) => (
-              <span
-                key={idx}
-                className="text-xs font-medium text-[#FF777F] bg-[#FF777F]/10 border border-[#FF777F]/25 rounded-md px-2.5 py-1 hover:border-[#FF777F]/60 transition-colors"
-              >
-                {skill.name}
-              </span>
-            ))}
-            {analysis.missingSkills.length === 0 && (
-              <p className="text-xs text-silver italic">All listed job skills were found.</p>
-            )}
-          </div>
-        </GlowPanel>
-      </motion.section>
-    </motion.div>
+      <p className="flex items-start gap-2 px-1 pb-2 text-[11px] leading-relaxed text-silver">
+        <Target className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        Tip: run the same job description again after editing your resume to see whether the match
+        score improves.
+      </p>
+    </div>
   );
 };
+
+export default ResultsView;

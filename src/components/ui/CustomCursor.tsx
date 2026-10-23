@@ -82,10 +82,10 @@ export const CustomCursor: React.FC = () => {
         }}
         animate={{
           scale: isHovering ? 1.45 : 1,
-          borderColor: isHovering ? 'rgba(121, 242, 192, 0.75)' : 'rgba(121, 242, 192, 0.35)',
+          borderColor: isHovering ? 'rgba(101, 221, 181, 0.75)' : 'rgba(101, 221, 181, 0.35)',
         }}
         transition={{ duration: 0.14 }}
-        className="w-7 h-7 rounded-full border border-[#79F2C0]/40 pointer-events-none"
+        className="w-7 h-7 rounded-full border border-[var(--color-mint)]/40 pointer-events-none"
       />
 
       {/* Immediate center point */}
@@ -100,7 +100,7 @@ export const CustomCursor: React.FC = () => {
           scale: isHovering ? 0.7 : 1,
         }}
         transition={{ duration: 0.1 }}
-        className="w-1.5 h-1.5 rounded-full bg-[#79F2C0] pointer-events-none shadow-[0_0_8px_rgba(121,242,192,0.9)]"
+        className="w-1.5 h-1.5 rounded-full bg-[var(--color-mint)] pointer-events-none shadow-[0_0_8px_rgba(101,221,181,0.9)]"
       />
     </div>
   );

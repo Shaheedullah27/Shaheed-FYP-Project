@@ -13,11 +13,11 @@ import { Float, Sparkles } from '@react-three/drei';
    - Orbital Rings with Satellites & Atmospheric Particle Field
    ============================================================ */
 
-const MINT = '#79F2C0';
-const CYAN = '#62D9F5';
-const VIOLET = '#A99BFF';
-const DARK_PANEL = '#131720';
-const SLATE_BORDER = '#1B2230';
+const MINT = '#65DDB5';
+const CYAN = '#4FC9A4';
+const VIOLET = '#D8B76A';
+const DARK_PANEL = '#142F2A';
+const SLATE_BORDER = '#1C443C';
 
 interface SceneProps {
   animate: boolean;
@@ -92,8 +92,8 @@ const DocumentPanel: React.FC<{
           <mesh key={i} position={[-0.6 + r.w / 2, r.y, 0]}>
             <boxGeometry args={[r.w, 0.038, 0.004]} />
             <meshStandardMaterial
-              color="#F1F0EA"
-              emissive={i % 2 === 0 ? accentColor : '#A1A8B5'}
+              color="#F1EBDD"
+              emissive={i % 2 === 0 ? accentColor : '#A3B5AB'}
               emissiveIntensity={i % 2 === 0 ? 0.6 : 0.2}
               transparent
               opacity={0.8}
@@ -127,7 +127,7 @@ const AnalysisCore: React.FC<{ innerRef: React.Ref<THREE.Group> }> = ({ innerRef
       <mesh>
         <icosahedronGeometry args={[0.38, 0]} />
         <meshStandardMaterial
-          color="#131720"
+          color="#142F2A"
           emissive={MINT}
           emissiveIntensity={1.2}
           roughness={0.2}
@@ -194,7 +194,7 @@ const SkillNodes: React.FC<{ animate: boolean }> = ({ animate }) => {
           <mesh>
             <sphereGeometry args={[n.size, 16, 16]} />
             <meshStandardMaterial
-              color="#F1F0EA"
+              color="#F1EBDD"
               emissive={n.color}
               emissiveIntensity={2.5}
             />
@@ -473,7 +473,7 @@ export const HeroScene: React.FC<SceneProps> = ({ animate, density }) => {
       <pointLight position={[3, 3, 3]} intensity={60} color={MINT} decay={2} />
       <pointLight position={[-3, -2, 3]} intensity={50} color={CYAN} decay={2} />
       <pointLight position={[0, 4, -2]} intensity={35} color={VIOLET} decay={2} />
-      <directionalLight position={[0, 5, 4]} intensity={0.4} color="#F1F0EA" />
+      <directionalLight position={[0, 5, 4]} intensity={0.4} color="#F1EBDD" />
 
       {/* Left: Floating Resume Panel */}
       <group position={[-1.85, 0, 0]}>

@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useMemo, useState } from 'react';
 import {
   History,
   Search,
@@ -9,315 +8,300 @@ import {
   Check,
   Sparkles,
   FileText,
-  Filter
+  TrendingUp,
 } from 'lucide-react';
 import { HistoryItem } from '../../types';
 import { exportHistoryAsJson, getAnalysisById } from '../../services/storage';
 import { downloadHtmlReport } from '../../services/reportGenerator';
-import { GlowPanel } from '../ui/GlowPanel';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { cn, riseIn, stagger } from '../../lib/ui';
+import { Button } from '../ui/Button';
+import { cn, scoreTone, toneText } from '../../lib/ui';
 
 interface HistoryViewProps {
   history: HistoryItem[];
   onViewAnalysis: (id: string) => void;
   onDeleteHistoryItem: (id: string) => void;
   onGoToAnalyze: () => void;
+  onGoToProgress: () => void;
 }
+
+type ScoreFilter = 'all' | 'strong' | 'partial' | 'low';
+
+const FILTERS: Array<{ id: ScoreFilter; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'strong', label: 'Strong (75+)' },
+  { id: 'partial', label: 'Partial (55–74)' },
+  { id: 'low', label: 'Low (below 55)' },
+];
+
+const matchesFilter = (score: number, filter: ScoreFilter) => {
+  if (filter === 'strong') return score >= 75;
+  if (filter === 'partial') return score >= 55 && score < 75;
+  if (filter === 'low') return score < 55;
+  return true;
+};
 
 export const HistoryView: React.FC<HistoryViewProps> = ({
   history,
   onViewAnalysis,
   onDeleteHistoryItem,
   onGoToAnalyze,
+  onGoToProgress,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [scoreFilter, setScoreFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
-  const [downloadSuccessId, setDownloadSuccessId] = useState<string | null>(null);
+  const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('all');
+  const [downloadedId, setDownloadedId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<HistoryItem | null>(null);
 
-  const filteredHistory = history.filter((item) => {
-    const matchesSearch = 
-      item.resumeTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.companyName && item.companyName.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    if (!matchesSearch) return false;
-
-    if (scoreFilter === 'high') return item.overallScore >= 75;
-    if (scoreFilter === 'medium') return item.overallScore >= 50 && item.overallScore < 75;
-    if (scoreFilter === 'low') return item.overallScore < 50;
-
-    return true;
-  });
+  const filteredHistory = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return history.filter(item => {
+      if (!matchesFilter(item.overallScore, scoreFilter)) return false;
+      if (!query) return true;
+      return (
+        item.resumeTitle.toLowerCase().includes(query) ||
+        item.jobTitle.toLowerCase().includes(query) ||
+        (item.companyName || '').toLowerCase().includes(query)
+      );
+    });
+  }, [history, scoreFilter, searchTerm]);
 
   const handleExportJson = () => {
-    const jsonStr = exportHistoryAsJson();
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonStr);
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `ai-resumematch-history.json`);
-    dlAnchorElem.click();
+    const dataStr =
+      'data:text/json;charset=utf-8,' + encodeURIComponent(exportHistoryAsJson());
+    const link = document.createElement('a');
+    link.setAttribute('href', dataStr);
+    link.setAttribute('download', 'ai-resumematch-history.json');
+    link.click();
   };
 
-  const handleDownloadSingleReport = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDownloadReport = (id: string) => {
     const record = getAnalysisById(id);
-    if (record) {
-      downloadHtmlReport(record);
-      setDownloadSuccessId(id);
-      setTimeout(() => setDownloadSuccessId(null), 2000);
-    }
+    if (!record) return;
+    downloadHtmlReport(record);
+    setDownloadedId(id);
+    setTimeout(() => setDownloadedId(null), 2000);
   };
-
-  const filterTabs: Array<{ id: typeof scoreFilter; label: string; activeColor: string }> = [
-    { id: 'all', label: `All Records (${history.length})`, activeColor: 'bg-white/10 text-ink border-white/20' },
-    { id: 'high', label: 'Strong (≥ 75%)', activeColor: 'bg-[#79F2C0]/15 text-[#79F2C0] border-[#79F2C0]/30' },
-    { id: 'medium', label: 'Moderate (50–74%)', activeColor: 'bg-[#62D9F5]/15 text-[#62D9F5] border-[#62D9F5]/30' },
-    { id: 'low', label: 'Low (< 50%)', activeColor: 'bg-[#FF777F]/15 text-[#FF777F] border-[#FF777F]/30' },
-  ];
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={stagger}
-      className="space-y-6"
-    >
-      {/* Page Header */}
-      <motion.div variants={riseIn}>
-        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
-              <History className="w-4 h-4" />
-              <span>SAVED COMPARISON ARCHIVE</span>
-              <span className="text-mute">·</span>
-              <span className="text-mute font-mono">{history.length} records</span>
+    <div className="mx-auto w-full max-w-4xl space-y-5">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-semibold tracking-tight text-porcelain sm:text-2xl">
+            Analysis history
+          </h2>
+          <p className="mt-1 text-sm text-silver">
+            {history.length === 0
+              ? 'Saved comparisons will appear here.'
+              : `${history.length} saved ${history.length === 1 ? 'comparison' : 'comparisons'} in this browser.`}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {history.length > 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onGoToProgress}
+              leftIcon={<TrendingUp className="h-3.5 w-3.5" />}
+            >
+              Progress
+            </Button>
+          )}
+          {history.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportJson}
+              leftIcon={<Download className="h-3.5 w-3.5" />}
+            >
+              Export list
+            </Button>
+          )}
+          {history.length > 0 && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={onGoToAnalyze}
+              leftIcon={<Sparkles className="h-4 w-4" />}
+            >
+              Analyze a resume
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {history.length > 0 && (
+        <div className="panel flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="w-full lg:max-w-sm">
+            <label htmlFor="history-search" className="sr-only">
+              Search saved analyses
+            </label>
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-silver"
+                aria-hidden="true"
+              />
+              <input
+                id="history-search"
+                type="search"
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+                placeholder="Search by resume, job title, or company"
+                className="field pl-10"
+              />
             </div>
-            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
-              Analysis History & Performance Log
-            </h1>
-            <p className="text-xs text-mute mt-0.5">
-              Review past matching runs, download standalone audit reports, or re-open full analysis breakdowns.
-            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            {history.length > 0 && (
-              <button
-                onClick={handleExportJson}
-                className="btn-ghost text-xs"
-                title="Download all saved comparisons as a JSON file"
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5 text-mute" />
-                <span>Export JSON</span>
-              </button>
-            )}
-            <button onClick={onGoToAnalyze} className="btn-primary text-xs">
-              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-              <span>New Analysis</span>
-            </button>
-          </div>
-        </GlowPanel>
-      </motion.div>
-
-      {/* Filter and Search Bar */}
-      <motion.div variants={riseIn}>
-        <GlowPanel className="p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-          <div className="relative w-full lg:w-96">
-            <Search className="w-4 h-4 text-mute absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Filter by resume, target role, or company..."
-              aria-label="Search saved comparisons"
-              className="field"
-              style={{ paddingLeft: '2.5rem' }}
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs" role="group" aria-label="Filter by score">
-            {filterTabs.map((tab) => {
-              const active = scoreFilter === tab.id;
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by match score">
+            {FILTERS.map(filter => {
+              const active = scoreFilter === filter.id;
               return (
                 <button
-                  key={tab.id}
-                  onClick={() => setScoreFilter(tab.id)}
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setScoreFilter(filter.id)}
+                  aria-pressed={active}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg font-mono text-[11px] transition-all whitespace-nowrap border',
-                    active 
-                      ? `${tab.activeColor} font-bold shadow-sm` 
-                      : 'border-transparent text-mute hover:text-ink hover:bg-white/[0.04]'
+                    'min-h-9 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                    active
+                      ? 'border-mint/30 bg-mint/10 text-mint'
+                      : 'border-transparent text-silver hover:bg-white/[0.04] hover:text-porcelain'
                   )}
                 >
-                  {tab.label}
+                  {filter.label}
                 </button>
               );
             })}
           </div>
-        </GlowPanel>
-      </motion.div>
+        </div>
+      )}
 
-      {/* History Data Table */}
-      <motion.div variants={riseIn}>
-        <GlowPanel glow className="overflow-hidden">
-          {history.length === 0 ? (
-            <div className="p-16 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-4 text-mute">
-                <History className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-display font-bold text-ink mb-1">No Saved Analyses Yet</h3>
-              <p className="text-xs text-mute max-w-sm mx-auto mb-6 leading-relaxed">
-                When you compare a resume with a job posting in Match Studio, the deterministic scores and skill gap metrics are automatically archived here.
-              </p>
-              <button onClick={onGoToAnalyze} className="btn-primary text-xs">
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Launch First Analysis
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-white/[0.02] border-b border-white/[0.08] text-mute font-mono text-[10px] uppercase tracking-wider">
-                  <tr>
-                    <th className="px-5 py-3.5 font-semibold">Resume Spec</th>
-                    <th className="px-5 py-3.5 font-semibold">Target Position</th>
-                    <th className="px-5 py-3.5 text-right font-semibold">TF-IDF Overlap</th>
-                    <th className="px-5 py-3.5 text-right font-semibold">Harmonic Score</th>
-                    <th className="px-5 py-3.5 text-right font-semibold">ATS Readability</th>
-                    <th className="px-5 py-3.5 font-semibold">Skills (Matched / Missing)</th>
-                    <th className="px-5 py-3.5 font-semibold">Primary Skill Gap</th>
-                    <th className="px-5 py-3.5 text-right font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.06] text-mute">
-                  {filteredHistory.map((item) => {
-                    const isHigh = item.overallScore >= 75;
-                    const isMed = item.overallScore >= 50 && item.overallScore < 75;
-                    const atsScore = item.atsScore || 80;
+      {history.length === 0 ? (
+        <div className="panel flex flex-col items-center px-6 py-12 text-center">
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-mint/25 bg-mint/10 text-mint">
+            <History className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <h3 className="font-heading text-base font-semibold text-porcelain">No saved analyses yet</h3>
+          <p className="mt-1 max-w-sm text-sm leading-relaxed text-silver">
+            Every comparison you run is saved here with its job title, date, and match score.
+          </p>
+          <Button
+            variant="primary"
+            size="md"
+            className="mt-5"
+            onClick={onGoToAnalyze}
+            leftIcon={<Sparkles className="h-4 w-4" />}
+          >
+            Analyze My Resume
+          </Button>
+        </div>
+      ) : filteredHistory.length === 0 ? (
+        <div className="panel px-6 py-10 text-center">
+          <p className="text-sm font-medium text-porcelain">No saved analyses match this view</p>
+          <p className="mt-1 text-sm text-silver">Try a different search term or score filter.</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setSearchTerm('');
+              setScoreFilter('all');
+            }}
+          >
+            Clear search and filters
+          </Button>
+        </div>
+      ) : (
+        <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-xl border border-white/[0.08] bg-graphite">
+          {filteredHistory.map(item => {
+            const tone = scoreTone(item.overallScore);
+            return (
+              <li key={item.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-porcelain">{item.jobTitle}</p>
+                  <p className="mt-0.5 truncate text-xs text-silver">
+                    {item.resumeTitle}
+                    {item.companyName ? ` · ${item.companyName}` : ''}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-silver">
+                    {item.timestamp} · {item.matchedSkillCount} skills matched ·{' '}
+                    {item.missingSkillCount} missing
+                    {item.topMissingSkill && item.topMissingSkill !== 'None'
+                      ? ` · biggest gap: ${item.topMissingSkill}`
+                      : ''}
+                  </p>
+                </div>
 
-                    return (
-                      <tr
-                        key={item.id}
-                        onClick={() => onViewAnalysis(item.id)}
-                        className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
-                      >
-                        <td className="px-5 py-3.5 font-medium">
-                          <div className="font-semibold text-ink truncate max-w-xs group-hover:text-[#79F2C0] transition-colors">
-                            {item.resumeTitle}
-                          </div>
-                          <div className="text-[11px] text-mute font-mono mt-0.5">{item.timestamp}</div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="truncate max-w-xs text-ink font-medium">{item.jobTitle}</div>
-                          {item.companyName && (
-                            <div className="text-[11px] text-mute">{item.companyName}</div>
-                          )}
-                        </td>
-                        <td className="px-5 py-3.5 text-right font-mono font-semibold tabular-nums text-ink">
-                          {item.cosineSimilarity}%
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <span
-                            className={cn(
-                              'font-mono font-bold tabular-nums px-2.5 py-0.5 rounded-full text-xs border inline-block',
-                              isHigh
-                                ? 'bg-[#79F2C0]/10 text-[#79F2C0] border-[#79F2C0]/30'
-                                : isMed
-                                ? 'bg-[#62D9F5]/10 text-[#62D9F5] border-[#62D9F5]/30'
-                                : 'bg-[#FF777F]/10 text-[#FF777F] border-[#FF777F]/30'
-                            )}
-                          >
-                            {item.overallScore}%
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <span className="font-mono font-semibold px-2 py-0.5 rounded text-xs bg-[#A99BFF]/10 text-[#A99BFF] border border-[#A99BFF]/25">
-                            {atsScore}%
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="font-mono text-[#79F2C0] font-semibold">{item.matchedSkillCount}</span>
-                          <span className="text-mute"> / </span>
-                          <span className="font-mono text-[#FF777F] font-semibold">
-                            {item.missingSkillCount} missing
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-[11px] font-mono text-ink bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-md truncate inline-block max-w-[140px]">
-                            {item.topMissingSkill || 'None'}
-                          </span>
-                        </td>
-                        <td
-                          className="px-5 py-3.5 text-right space-x-1 whitespace-nowrap"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={(e) => handleDownloadSingleReport(item.id, e)}
-                            className="p-1.5 text-mute hover:text-[#79F2C0] hover:bg-[#79F2C0]/10 rounded-lg transition-colors inline-flex items-center"
-                            title="Download Standalone HTML Report"
-                          >
-                            {downloadSuccessId === item.id ? (
-                              <Check className="w-4 h-4 text-[#79F2C0]" />
-                            ) : (
-                              <Download className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => onViewAnalysis(item.id)}
-                            className="p-1.5 text-mute hover:text-[#62D9F5] hover:bg-[#62D9F5]/10 rounded-lg transition-colors inline-flex items-center"
-                            title="Open Analysis View"
-                          >
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setPendingDelete(item)}
-                            className="p-1.5 text-mute hover:text-[#FF777F] hover:bg-[#FF777F]/10 rounded-lg transition-colors inline-flex items-center"
-                            title="Delete Analysis Record"
-                            aria-label={`Delete ${item.resumeTitle} comparison`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={cn('font-mono text-lg font-semibold tabular-nums', toneText[tone])}>
+                    {item.overallScore}%
+                  </span>
 
-                  {filteredHistory.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="px-5 py-12 text-center text-xs text-mute">
-                        No saved records match your current query and score filter.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </GlowPanel>
-      </motion.div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onViewAnalysis(item.id)}
+                    rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+                  >
+                    View results
+                  </Button>
 
-      {/* Safe deletion confirmation */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadReport(item.id)}
+                    aria-label={`Download the report for ${item.jobTitle}`}
+                    title="Download report"
+                    className="rounded-lg p-2 text-silver transition-colors hover:bg-white/[0.05] hover:text-mint"
+                  >
+                    {downloadedId === item.id ? (
+                      <Check className="h-4 w-4 text-mint" aria-hidden="true" />
+                    ) : (
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(item)}
+                    aria-label={`Delete the comparison for ${item.jobTitle}`}
+                    title="Delete this comparison"
+                    className="rounded-lg p-2 text-silver transition-colors hover:bg-coral-error/10 hover:text-coral-error"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <p className="flex items-center gap-2 px-1 text-xs text-silver">
+        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+        History is stored locally in this browser. Deleting a comparison cannot be undone.
+      </p>
+
       <ConfirmDialog
         open={pendingDelete !== null}
         destructive
         title="Delete this saved comparison?"
         message={
           <>
-            <span className="font-semibold text-ink">{pendingDelete?.resumeTitle}</span>
-            {pendingDelete ? ` ↔ ${pendingDelete.jobTitle}` : ''} will be permanently removed from your history,
-            including all associated scores, skill mappings, and ATS findings.
+            <span className="font-semibold text-porcelain">{pendingDelete?.resumeTitle}</span>
+            {pendingDelete ? ` · ${pendingDelete.jobTitle}` : ''} will be removed from your history,
+            including its scores, skills, and ATS findings.
           </>
         }
-        confirmLabel="Delete Record"
-        cancelLabel="Cancel"
+        confirmLabel="Delete comparison"
+        cancelLabel="Keep it"
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => {
           if (pendingDelete) onDeleteHistoryItem(pendingDelete.id);
           setPendingDelete(null);
         }}
       />
-    </motion.div>
+    </div>
   );
 };
+
+export default HistoryView;

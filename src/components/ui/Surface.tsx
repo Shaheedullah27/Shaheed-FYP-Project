@@ -13,15 +13,15 @@ export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const toneStyles: Record<SurfaceTone, string> = {
-  obsidian: 'bg-[#0B0D12]',
-  graphite: 'bg-[#131720]',
-  slate: 'bg-[#1B2230]',
+  obsidian: 'bg-[var(--color-obsidian)]',
+  graphite: 'bg-[var(--color-graphite)]',
+  slate: 'bg-[var(--color-slate-surface)]',
 };
 
 const elevationStyles: Record<SurfaceElevation, string> = {
   flat: 'shadow-none',
-  raised: 'shadow-[0_4px_20px_-6px_rgba(0,0,0,0.5)]',
-  overlay: 'shadow-[0_20px_48px_-12px_rgba(0,0,0,0.85)]',
+  raised: 'shadow-[0_4px_20px_-6px_rgba(4,14,12,0.5)]',
+  overlay: 'shadow-[0_20px_48px_-12px_rgba(4,14,12,0.75)]',
 };
 
 const radiusStyles: Record<SurfaceRadius, string> = {

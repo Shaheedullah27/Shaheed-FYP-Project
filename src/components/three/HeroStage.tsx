@@ -31,11 +31,11 @@ const StaticFallback: React.FC<{ animate: boolean }> = ({ animate }) => (
   <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
     <div
       className={`absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl ${animate ? 'animate-pulse-subtle' : ''}`}
-      style={{ background: 'radial-gradient(circle, rgba(121,242,192,0.18), transparent 65%)' }}
+      style={{ background: 'radial-gradient(circle, rgba(101,221,181,0.18), transparent 65%)' }}
     />
     <div
       className={`absolute left-[38%] top-[42%] h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl ${animate ? 'animate-pulse-subtle' : ''}`}
-      style={{ background: 'radial-gradient(circle, rgba(98,217,245,0.15), transparent 65%)' }}
+      style={{ background: 'radial-gradient(circle, rgba(19,138,114,0.18), transparent 65%)' }}
     />
     <div className="absolute inset-0 grid-lines opacity-40" />
   </div>

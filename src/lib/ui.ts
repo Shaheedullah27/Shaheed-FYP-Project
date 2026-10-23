@@ -12,21 +12,22 @@ export const scoreTone = (score: number): 'ion' | 'good' | 'warn' | 'bad' => {
   return 'bad';
 };
 
-/** Tailwind class sets for each tone — aligned with our core tokens */
+/** Tailwind class sets for each tone — aligned with our Emerald Luxe tokens.
+ *  Colors live in index.css as ;theme tokens; these classes keep tone roles stable while both themes stay readable. */
 export const toneText: Record<string, string> = {
-  ion: 'text-[#62D9F5]',
-  good: 'text-[#79F2C0]',
-  warn: 'text-[#F4BD73]',
-  bad: 'text-[#FF777F]',
-  violet: 'text-[#A99BFF]',
+  ion: 'text-[var(--color-ion)]',
+  good: 'text-[var(--color-mint)]',
+  warn: 'text-[var(--color-amber-warn)]',
+  bad: 'text-[var(--color-coral-error)]',
+  violet: 'text-[var(--color-champagne)]',
 };
 
 export const toneFill: Record<string, string> = {
-  ion: 'bg-[#62D9F5]',
-  good: 'bg-[#79F2C0]',
-  warn: 'bg-[#F4BD73]',
-  bad: 'bg-[#FF777F]',
-  violet: 'bg-[#A99BFF]',
+  ion: 'bg-[var(--color-ion)]',
+  good: 'bg-[var(--color-mint)]',
+  warn: 'bg-[var(--color-amber-warn)]',
+  bad: 'bg-[var(--color-coral-error)]',
+  violet: 'bg-[var(--color-champagne)]',
 };
 
 export const toneTag: Record<string, string> = {
@@ -34,7 +35,7 @@ export const toneTag: Record<string, string> = {
   good: 'tag-mint',
   warn: 'tag-warn',
   bad: 'tag-bad',
-  violet: 'tag-violet',
+  violet: 'tag-gold',
 };
 
 /** True when the user asked the OS for reduced motion. */

@@ -22,12 +22,12 @@ const variantStyles: Record<BadgeVariant, string> = {
 };
 
 const dotColors: Record<BadgeVariant, string> = {
-  mint: 'bg-[#79F2C0]',
-  cyan: 'bg-[#62D9F5]',
-  violet: 'bg-[#A99BFF]',
-  amber: 'bg-[#F4BD73]',
-  coral: 'bg-[#FF777F]',
-  neutral: 'bg-[#A1A8B5]',
+  mint: 'bg-mint',
+  cyan: 'bg-ion',
+  violet: 'bg-plasma',
+  amber: 'bg-amber-warn',
+  coral: 'bg-coral-error',
+  neutral: 'bg-silver',
 };
 
 export const Badge: React.FC<BadgeProps> = ({

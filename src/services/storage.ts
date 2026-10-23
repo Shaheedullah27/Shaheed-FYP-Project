@@ -1,21 +1,36 @@
 import { AnalysisResult, HistoryItem } from '../types';
-import { INITIAL_HISTORY, SAMPLE_RESUMES, SAMPLE_JOB_DESCRIPTIONS } from '../data/sampleData';
+import { SAMPLE_RESUMES, SAMPLE_JOB_DESCRIPTIONS } from '../data/sampleData';
 import { analyzeResumeAndJob } from './nlpEngine';
 
 const HISTORY_KEY = 'ai_resumematch_history';
 const ACTIVE_ANALYSIS_KEY = 'ai_resumematch_active_analysis';
 
+/**
+ * Returns the comparisons this user actually ran. New users start with an
+ * empty history so the dashboard can show an honest empty state instead of
+ * invented sample metrics.
+ */
 export function getStoredHistory(): HistoryItem[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(INITIAL_HISTORY));
-      return INITIAL_HISTORY;
-    }
-    return JSON.parse(raw);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     console.error('Failed to load history from localStorage', e);
-    return INITIAL_HISTORY;
+    return [];
+  }
+}
+
+/** Removes every saved comparison from this browser. */
+export function clearStoredHistory(): void {
+  const history = getStoredHistory();
+  try {
+    history.forEach(item => localStorage.removeItem(`analysis_record_${item.id}`));
+    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(ACTIVE_ANALYSIS_KEY);
+  } catch (e) {
+    console.error('Failed to clear saved comparisons', e);
   }
 }
 
@@ -27,7 +42,9 @@ export function saveAnalysisToHistory(analysis: AnalysisResult): HistoryItem {
     id: analysis.id,
     timestamp: analysis.timestamp,
     resumeTitle: analysis.resumeTitle,
+    candidateName: analysis.candidateName,
     jobTitle: analysis.jobTitle,
+    companyName: analysis.companyName,
     overallScore: analysis.overallScore,
     cosineSimilarity: analysis.cosineSimilarity,
     atsScore: analysis.atsCompatibilityReport?.atsScore || analysis.atsReadabilityScore,

@@ -108,6 +108,39 @@ export interface AtsCompatibilityReport {
   disclaimer: string;
 }
 
+export interface AiInsightSection {
+  title: string;
+  items: string[];
+}
+
+export interface GeminiInsights {
+  /** How well the resume experience maps to the job description. */
+  experienceAlignment: string;
+  /** Relevant strengths and transferable skills. */
+  strengths: AiInsightSection;
+  /** Missing or weakly demonstrated skills. */
+  skillGaps: AiInsightSection;
+  /** Ranked resume-improvement suggestions, most impactful first. */
+  prioritizedImprovements: AiInsightSection;
+  /** ATS keywords grounded in the provided job description. */
+  atsKeywordRecommendations: AiInsightSection;
+  /** Wording-level improvements for existing bullets (never invented facts). */
+  bulletPointImprovements: AiInsightSection;
+}
+
+export type AiInsightsStatus = 'available' | 'unavailable' | 'error' | 'declined';
+
+export interface AiInsightsBlock {
+  status: AiInsightsStatus;
+  insights?: GeminiInsights | null;
+  /** User-facing explanation when insights are not available. */
+  reason?: string;
+  /** Gemini model id that produced the insights, when available. */
+  model?: string;
+  /** Advisory disclaimer shown under AI sections. */
+  aiDisclaimer?: string;
+}
+
 export interface AnalysisResult {
   id: string;
   timestamp: string;
@@ -134,6 +167,10 @@ export interface AnalysisResult {
   
   // Dedicated ATS Compatibility Report
   atsCompatibilityReport?: AtsCompatibilityReport;
+
+  // Optional Gemini AI contextual insights. Explicitly consented per-run on
+  // the analyze form; absent when declined, unconfigured, or failed.
+  aiInsights?: AiInsightsBlock | null;
 
   // Raw / Processed Text
   resumeText: string;
@@ -163,9 +200,11 @@ export type ActiveTab =
   | 'ats-checker'
   | 'security'
   | 'history' 
+  | 'progress'
   | 'dictionary'
   | 'backend-guide'
-  | 'about';
+  | 'about'
+  | 'settings';
 
 export interface SampleDocument {
   id: string;

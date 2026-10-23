@@ -10,6 +10,7 @@ This project has a React/Vite frontend and a Flask API backend. Open the fronten
 - **NLP & Similarity Engine**: scikit-learn (`TfidfVectorizer`, `cosine_similarity`), NumPy
 - **Document Parsing**: PyMuPDF (`fitz`) for PDF, `python-docx` for Word documents, and text parsing for TXT/RTF/MD
 - **Database**: SQLite3 (`resumematch.db`), initialized and upgraded automatically when the API starts
+- **Optional — AI Insights**: Google `google-genai` SDK. Contextual Gemini commentary (experience alignment, strengths, gaps, prioritized improvements, ATS keywords grounded in the posting, bullet-point tweaks) appended to the local analysis. Explicit per-run user consent is required in the UI; failures degrade to local-only results.
 - **Explainability**: Deterministic mathematical cosine similarity, sublinear term frequencies, n-gram extraction (unigrams + bigrams), and category-level skill gap classification.
 
 ---
@@ -68,6 +69,39 @@ To run the backend without activating the environment:
 ```powershell
 .\backend\venv\Scripts\python.exe .\backend\app.py
 ```
+
+### Configure the Gemini API key (optional AI insights)
+
+The AI insights feature is optional: without a key, the app still runs the full local analysis and the results page shows an explicit "AI insights unavailable" notice. The API key is read server-side only from the backend environment variable `GEMINI_API_KEY`. It must never be placed in source code, the React frontend, or Git.
+
+**Locally:**
+
+1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) (keys start with `AIza...`).
+2. Create `backend\.env` (it is already covered by `.gitignore`):
+
+```env
+GEMINI_API_KEY=AIza...your-key...
+# Optional: override the model used for insights
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+3. Restart `python app.py`. `GET /api/health` then reports `"ai_insights": "configured"`.
+
+`GEMINI_MODEL` is optional and defaults to **`gemini-3.5-flash-lite`** (fast, cost-efficient, stable). Supported alternatives at the time of writing include `gemini-3.8-flash`, `gemini-3.5-flash`, and `gemini-2.5-flash`. Set it once via the environment variable — no model name is hardcoded in the analysis code.
+
+AI insights run **only when the user ticks "Add AI insights (optional)" on the analyze screen**. That prediction sends exactly the resume text and the job description to Google once, never logs either document, never changes the locally computed match score, and the consent is required on every run.
+
+### Deploying with the key on Render
+
+On Render, add environment variables in **Dashboard → Service → Environment** (dashboard values are injected securely; no secret is written to the repository):
+
+| Key | Value | Notes |
+| :-- | :-- | :-- |
+| `GEMINI_API_KEY` | your Gemini API key | Required for AI insights. Optional for the rest of the app. |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Optional. Omit to use the default. |
+| `PORT` | Render's default | The Flask server already binds to `$PORT`. |
+
+The deployed service starts with everything else (analysis, history, security dashboard) fully functional; AI insights simply show "unavailable" until the key is added. Rendering both engines in the same analysis response keeps deployment unchanged in every other respect, and the app picks up the variable on its next restart after the environment is saved.
 
 ### Optional: seed sample data
 

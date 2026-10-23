@@ -64,7 +64,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
     },
     {
       step: '03 // Execute Multi-Engine Comparison',
-      action: 'Click "Run Match Analysis" to generate deterministic TF-IDF and taxonomy scores.',
+      action: 'Click “Analyze My Resume” to generate the comparison scores.',
       tip: 'Calculations are pure mathematical functions: identical inputs produce identical scores.'
     },
     {
@@ -100,13 +100,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
       <motion.div variants={riseIn}>
         <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-mint mb-1">
               <GraduationCap className="w-4 h-4" />
               <span>FINAL YEAR PROJECT SPECIFICATION</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
+            <h2 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-ink">
               About AI ResumeMatch
-            </h1>
+            </h2>
             <p className="text-xs text-mute mt-0.5">
               Deterministic TF-IDF similarity, taxonomy-driven skill extraction, and ATS layout readability architecture.
             </p>
@@ -117,7 +117,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
             className="btn-primary text-xs shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            <span>Open Match Studio</span>
+            <span>Analyze a resume</span>
           </button>
         </GlowPanel>
       </motion.div>
@@ -125,8 +125,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
       {/* Abstract & Academic Objectives Grid */}
       <motion.div variants={riseIn} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlowPanel className="p-6">
-          <h2 className="text-sm font-display font-bold text-ink mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#79F2C0]" />
+          <h2 className="text-sm font-display font-semibold text-ink mb-3 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-mint" />
             <span>Research Motivation & Problem Statement</span>
           </h2>
           <p className="text-xs text-mute leading-relaxed mb-3">
@@ -138,25 +138,25 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
         </GlowPanel>
 
         <GlowPanel className="p-6">
-          <h2 className="text-sm font-display font-bold text-ink mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#62D9F5]" />
+          <h2 className="text-sm font-display font-semibold text-ink mb-3 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-ion" />
             <span>Core Technical Deliverables</span>
           </h2>
           <ul className="space-y-2 text-xs text-mute leading-relaxed">
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[#79F2C0]">•</span>
+              <span className="font-mono text-mint">•</span>
               <span><strong className="text-ink">Deterministic NLP:</strong> Scikit-learn TF-IDF vectorization with n-gram tokenization and sublinear term frequency weighting.</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[#62D9F5]">•</span>
+              <span className="font-mono text-ion">•</span>
               <span><strong className="text-ink">Multi-Domain Taxonomy:</strong> Multi-category skill extraction covering languages, databases, web development, cloud, and project management.</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[#A99BFF]">•</span>
+              <span className="font-mono text-plasma">•</span>
               <span><strong className="text-ink">Extractability Heuristics:</strong> RFC-compliant email detection, phone parsing, and heading hierarchy verification.</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[#F4BD73]">•</span>
+              <span className="font-mono text-amber-warn">•</span>
               <span><strong className="text-ink">Academic Equity:</strong> Protected student mode allowing substantial coursework to substitute for employment history.</span>
             </li>
           </ul>
@@ -166,11 +166,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
       {/* Step-by-Step Viva Presentation Demo Guide */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <div className="flex items-center gap-2 mb-2 text-xs font-mono font-semibold text-[#79F2C0]">
+          <div className="flex items-center gap-2 mb-2 text-xs font-mono font-semibold text-mint">
             <Layers className="w-4 h-4" />
             <span>DEMONSTRATION WALKTHROUGH</span>
           </div>
-          <h2 className="text-base font-display font-bold text-ink mb-1.5">
+          <h2 className="text-base font-display font-semibold text-ink mb-1.5">
             Step-by-Step Viva Evaluation Guide
           </h2>
           <p className="text-xs text-mute mb-5">
@@ -180,10 +180,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {demoSteps.map((d, idx) => (
               <div key={idx} className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08] text-xs">
-                <div className="font-mono font-bold text-[#79F2C0] mb-1">{d.step}</div>
+                <div className="font-mono font-semibold text-mint mb-1">{d.step}</div>
                 <p className="text-ink font-medium mb-2 leading-relaxed">{d.action}</p>
-                <div className="text-[11px] text-[#62D9F5] bg-[#62D9F5]/8 p-2.5 rounded-lg border border-[#62D9F5]/20 font-mono">
-                  <strong className="text-[#62D9F5]">Note: </strong>
+                <div className="text-[11px] text-ion bg-ion/8 p-2.5 rounded-lg border border-ion/20 font-mono">
+                  <strong className="text-ion">Note: </strong>
                   {d.tip}
                 </div>
               </div>
@@ -195,8 +195,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
       {/* Examiner FAQ */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <h2 className="text-base font-display font-bold text-ink mb-1 flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-[#79F2C0]" />
+          <h2 className="text-base font-display font-semibold text-ink mb-1 flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-mint" />
             <span>Academic Defense FAQ</span>
           </h2>
           <p className="text-xs text-mute mb-5">
@@ -213,7 +213,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
                     className="w-full p-4 text-left font-semibold text-xs text-ink hover:bg-white/[0.03] flex items-center justify-between transition-colors"
                   >
                     <span>{faq.q}</span>
-                    <span className="text-[#79F2C0] ml-3 shrink-0">
+                    <span className="text-mint ml-3 shrink-0">
                       {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </span>
                   </button>

@@ -48,7 +48,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               Boolean(leftIcon) && 'pl-9',
               Boolean(rightIcon) && 'pr-9',
               mono ? 'font-mono text-xs' : undefined,
-              error ? 'border-[#FF777F]/60 focus:border-[#FF777F] focus:ring-[#FF777F]/15' : undefined,
+              error ? 'border-[var(--color-coral-error)]/60 focus:border-[var(--color-coral-error)] focus:ring-[var(--color-coral-error)]/15' : undefined,
               className
             )}
             {...props}

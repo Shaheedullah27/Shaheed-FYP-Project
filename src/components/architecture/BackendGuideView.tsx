@@ -1,63 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { 
-  Terminal, 
-  Cpu, 
-  Database, 
-  CheckCircle2, 
-  AlertCircle, 
-  Copy, 
-  Check, 
-  Server, 
-  Layers, 
-  Code2, 
-  RefreshCw,
+import {
+  Terminal,
+  Cpu,
+  Database,
+  Copy,
+  Check,
+  Server,
+  Code2,
   FolderTree,
-  Sparkles
+  Settings
 } from 'lucide-react';
-import { checkFlaskHealth, getFlaskUrl, setFlaskUrl, getEngineMode, setEngineMode } from '../../services/api';
+import { ActiveTab } from '../../types';
 import { GlowPanel } from '../ui/GlowPanel';
-import { cn, riseIn, stagger } from '../../lib/ui';
+import { Button } from '../ui/Button';
+import { riseIn, stagger } from '../../lib/ui';
 
-export const BackendGuideView: React.FC = () => {
-  const [flaskUrl, setFlaskUrlState] = useState(getFlaskUrl());
-  const [engineMode, setEngineModeState] = useState<'browser' | 'flask'>(getEngineMode());
-  const [healthStatus, setHealthStatus] = useState<{
-    checking: boolean;
-    connected: boolean;
-    version?: string;
-    error?: string;
-  }>({
-    checking: false,
-    connected: false
-  });
+interface BackendGuideViewProps {
+  onTabChange: (tab: ActiveTab) => void;
+}
+
+export const BackendGuideView: React.FC<BackendGuideViewProps> = ({ onTabChange }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-  const checkConnection = async () => {
-    setHealthStatus(prev => ({ ...prev, checking: true }));
-    const result = await checkFlaskHealth();
-    setHealthStatus({
-      checking: false,
-      connected: result.connected,
-      version: result.version,
-      error: result.error
-    });
-  };
-
-  useEffect(() => {
-    checkConnection();
-  }, []);
-
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setFlaskUrlState(val);
-    setFlaskUrl(val);
-  };
-
-  const handleToggleMode = (mode: 'browser' | 'flask') => {
-    setEngineModeState(mode);
-    setEngineMode(mode);
-  };
 
   const copyCode = (code: string, idx: number) => {
     navigator.clipboard.writeText(code);
@@ -81,126 +45,41 @@ export const BackendGuideView: React.FC = () => {
     >
       {/* Header */}
       <motion.div variants={riseIn}>
-        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
-              <Terminal className="w-4 h-4" />
-              <span>SYSTEM ARCHITECTURE & RUNTIME</span>
+            <div className="flex items-center gap-2 text-xs font-medium text-mint mb-1">
+              <Terminal className="w-4 h-4" aria-hidden="true" />
+              <span>How the app works</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
-              Dual-Engine Topology & Local Deployment
-            </h1>
-            <p className="text-xs text-mute mt-0.5">
-              Run standalone in client browser or connect to the Python Flask microservice with SQLite persistence.
+            <h2 className="text-xl md:text-2xl font-heading font-semibold tracking-tight text-porcelain">
+              Two ways to run the analysis
+            </h2>
+            <p className="text-sm text-silver mt-1 max-w-xl">
+              The app works by itself in the browser, or it can use the optional Python backend for
+              the same scoring. Both produce the same comparisons.
             </p>
           </div>
-
-          {/* Engine Selector */}
-          <div className="flex items-center gap-1.5 p-1 bg-white/[0.04] border border-white/[0.08] rounded-xl text-xs shrink-0">
-            <button
-              onClick={() => handleToggleMode('browser')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-mono text-[11px] transition-colors',
-                engineMode === 'browser' 
-                  ? 'bg-[#79F2C0] text-[#0B0D12] font-bold shadow-[0_0_12px_rgba(121,242,192,0.3)]' 
-                  : 'text-mute hover:text-ink'
-              )}
-            >
-              In-Browser Engine
-            </button>
-            <button
-              onClick={() => handleToggleMode('flask')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-mono text-[11px] transition-colors',
-                engineMode === 'flask' 
-                  ? 'bg-[#79F2C0] text-[#0B0D12] font-bold shadow-[0_0_12px_rgba(121,242,192,0.3)]' 
-                  : 'text-mute hover:text-ink'
-              )}
-            >
-              Flask Python Daemon
-            </button>
-          </div>
-        </GlowPanel>
-      </motion.div>
-
-      {/* Live Server Connection Card */}
-      <motion.div variants={riseIn}>
-        <GlowPanel className="p-6">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.08]">
-            <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-[#79F2C0]" />
-              <h2 className="text-sm font-display font-bold text-ink">
-                Flask Microservice Connection Status
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {healthStatus.checking ? (
-                <span className="text-xs font-mono text-mute">Checking connection...</span>
-              ) : healthStatus.connected ? (
-                <span className="flex items-center gap-1.5 text-xs font-mono text-[#79F2C0] bg-[#79F2C0]/10 px-2.5 py-1 rounded-full border border-[#79F2C0]/30">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Online (v{healthStatus.version})</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5 text-xs font-mono text-mute bg-white/[0.04] px-2.5 py-1 rounded-full border border-white/[0.08]">
-                  <AlertCircle className="w-3.5 h-3.5 text-[#F4BD73]" />
-                  <span>Daemon Offline</span>
-                </span>
-              )}
-              <button
-                onClick={checkConnection}
-                disabled={healthStatus.checking}
-                className="p-1.5 text-mute hover:text-ink rounded-lg hover:bg-white/[0.08] transition-colors"
-                title="Probe endpoint health"
-              >
-                <RefreshCw className={cn("w-4 h-4", healthStatus.checking && "animate-spin text-[#79F2C0]")} />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="md:col-span-2">
-              <label className="block text-[11px] font-mono text-mute mb-1">
-                Flask REST API Base Endpoint
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={flaskUrl}
-                  onChange={handleUrlChange}
-                  placeholder="http://localhost:5000"
-                  className="field font-mono"
-                />
-                <button
-                  onClick={checkConnection}
-                  className="btn-primary text-xs whitespace-nowrap"
-                >
-                  Probe Endpoint
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.06]">
-              <div className="font-semibold text-ink mb-1">Autonomous Offline Mode</div>
-              <p className="text-[11px] text-mute leading-relaxed">
-                If the Python server is offline, the client seamlessly falls back to the in-memory TF-IDF and regex engine. Zero setup required to test resumes.
-              </p>
-            </div>
-          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onTabChange('settings')}
+            leftIcon={<Settings className="w-3.5 h-3.5" />}
+          >
+            Engine settings
+          </Button>
         </GlowPanel>
       </motion.div>
 
       {/* Architecture Flow Diagram */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <h2 className="text-sm font-display font-bold text-ink mb-4">
+          <h2 className="text-sm font-display font-semibold text-ink mb-4">
             Component Architecture & Data Lifecycle
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
             <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <div className="flex items-center gap-2 mb-2 font-mono font-bold text-[#79F2C0]">
+              <div className="flex items-center gap-2 mb-2 font-mono font-semibold text-mint">
                 <Code2 className="w-4 h-4" />
                 <span>01 // Client SPA</span>
               </div>
@@ -213,7 +92,7 @@ export const BackendGuideView: React.FC = () => {
             </div>
 
             <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <div className="flex items-center gap-2 mb-2 font-mono font-bold text-[#62D9F5]">
+              <div className="flex items-center gap-2 mb-2 font-mono font-semibold text-ion">
                 <Server className="w-4 h-4" />
                 <span>02 // Python Backend</span>
               </div>
@@ -226,7 +105,7 @@ export const BackendGuideView: React.FC = () => {
             </div>
 
             <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <div className="flex items-center gap-2 mb-2 font-mono font-bold text-[#A99BFF]">
+              <div className="flex items-center gap-2 mb-2 font-mono font-semibold text-plasma">
                 <Cpu className="w-4 h-4" />
                 <span>03 // NLP & Matching</span>
               </div>
@@ -239,7 +118,7 @@ export const BackendGuideView: React.FC = () => {
             </div>
 
             <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <div className="flex items-center gap-2 mb-2 font-mono font-bold text-[#F4BD73]">
+              <div className="flex items-center gap-2 mb-2 font-mono font-semibold text-amber-warn">
                 <Database className="w-4 h-4" />
                 <span>04 // Persistence</span>
               </div>
@@ -257,7 +136,7 @@ export const BackendGuideView: React.FC = () => {
       {/* Step-by-Step Local Setup Guide */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <h2 className="text-base font-display font-bold text-ink mb-1.5">
+          <h2 className="text-base font-display font-semibold text-ink mb-1.5">
             Local Development & Execution Setup
           </h2>
           <p className="text-xs text-mute mb-5">
@@ -266,18 +145,18 @@ export const BackendGuideView: React.FC = () => {
 
           <div className="space-y-3.5">
             {setupCommands.map((cmd, idx) => (
-              <div key={idx} className="rounded-xl border border-white/[0.08] overflow-hidden bg-[#0B0D12]">
+              <div key={idx} className="rounded-xl border border-white/[0.08] overflow-hidden bg-obsidian">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.03] border-b border-white/[0.08] text-xs font-semibold text-ink">
                   <span className="font-mono text-[11px]">{cmd.title}</span>
                   <button
                     onClick={() => copyCode(cmd.code, idx)}
-                    className="flex items-center gap-1.5 text-[11px] font-mono text-mute hover:text-[#79F2C0] transition-colors"
+                    className="flex items-center gap-1.5 text-[11px] font-mono text-mute hover:text-mint transition-colors"
                   >
-                    {copiedIndex === idx ? <Check className="w-3.5 h-3.5 text-[#79F2C0]" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedIndex === idx ? <Check className="w-3.5 h-3.5 text-mint" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedIndex === idx ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
-                <pre className="p-4 text-[#F1F0EA]/85 font-mono text-xs overflow-x-auto leading-relaxed">
+                <pre className="p-4 text-porcelain/85 font-mono text-xs overflow-x-auto leading-relaxed">
                   <code>{cmd.code}</code>
                 </pre>
               </div>
@@ -290,35 +169,35 @@ export const BackendGuideView: React.FC = () => {
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            <FolderTree className="w-4 h-4 text-[#79F2C0]" />
-            <h2 className="text-sm font-display font-bold text-ink">
+            <FolderTree className="w-4 h-4 text-mint" />
+            <h2 className="text-sm font-display font-semibold text-ink">
               Core Backend Modules Inventory
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#79F2C0] block mb-1">backend/app.py</span>
+              <span className="font-mono font-semibold text-mint block mb-1">backend/app.py</span>
               <span className="text-mute text-[11px]">Flask HTTP entrypoint, route handlers, CORS configuration, and telemetry endpoints.</span>
             </div>
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#62D9F5] block mb-1">backend/nlp_engine.py</span>
+              <span className="font-mono font-semibold text-ion block mb-1">backend/nlp_engine.py</span>
               <span className="text-mute text-[11px]">TF-IDF calculation, cosine similarity metric, and taxonomy skill extraction pipeline.</span>
             </div>
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#A99BFF] block mb-1">backend/parser.py</span>
+              <span className="font-mono font-semibold text-plasma block mb-1">backend/parser.py</span>
               <span className="text-mute text-[11px]">Multi-format file parser converting PDF and DOCX binary streams into clean plaintext.</span>
             </div>
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#F4BD73] block mb-1">backend/database.py</span>
+              <span className="font-mono font-semibold text-amber-warn block mb-1">backend/database.py</span>
               <span className="text-mute text-[11px]">SQLite schema migrations, record persistence, queries, and audit trail storage.</span>
             </div>
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#62D9F5] block mb-1">backend/schema.sql</span>
+              <span className="font-mono font-semibold text-ion block mb-1">backend/schema.sql</span>
               <span className="text-mute text-[11px]">Relational tables for comparison history, security inspections, and audit logs.</span>
             </div>
             <div className="p-3.5 bg-white/[0.02] rounded-xl border border-white/[0.08]">
-              <span className="font-mono font-bold text-[#79F2C0] block mb-1">backend/requirements.txt</span>
+              <span className="font-mono font-semibold text-mint block mb-1">backend/requirements.txt</span>
               <span className="text-mute text-[11px]">Pinned Python dependencies including Flask, scikit-learn, PyMuPDF, and python-docx.</span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { AnalysisResult, AtsCompatibilityReport, AtsSectionDetection } from '../types';
+import { AnalysisResult, AtsCompatibilityReport, AtsSectionDetection, AiInsightsBlock } from '../types';
 import { analyzeResumeAndJob } from './nlpEngine';
 import { evaluateAtsCompatibility } from './atsChecker';
 
@@ -43,15 +43,21 @@ function normalizeFlaskReport(
   if (!raw) return undefined;
   const local = evaluateAtsCompatibility(resumeText, jobDescriptionText, missingSkillNames);
   const sectionExplanations = new Map(local.sectionsDetected.map(s => [s.sectionName, s.explanation]));
+  const rawSections = Array.isArray(raw.sectionsDetected) ? raw.sectionsDetected : local.sectionsDetected;
   return {
     ...local,
     ...raw,
+    checks: Array.isArray(raw.checks) ? raw.checks : local.checks,
+    recommendations: Array.isArray(raw.recommendations) ? raw.recommendations : local.recommendations,
+    scoringBreakdown: raw.scoringBreakdown ?? local.scoringBreakdown,
     formattingRisks: raw.formattingRisks ?? local.formattingRisks,
     contactDetails: {
-      ...raw.contactDetails,
-      locationFound: raw.contactDetails.locationFound ?? local.contactDetails.locationFound,
+      ...local.contactDetails,
+      ...(raw.contactDetails ?? {}),
+      locationFound:
+        raw.contactDetails?.locationFound ?? local.contactDetails.locationFound,
     },
-    sectionsDetected: raw.sectionsDetected.map(s => ({
+    sectionsDetected: rawSections.map(s => ({
       ...s,
       explanation:
         s.explanation ??
@@ -79,6 +85,56 @@ export function getFlaskUrl(): string {
 
 export function setFlaskUrl(url: string) {
   localStorage.setItem(FLASK_URL_KEY, url);
+}
+
+/**
+ * Normalizes the backend `ai_insights` block into the shared AiInsightsBlock
+ * shape. Older backends omit the field entirely — treat that as 'declined'
+ * (local-only run) rather than inventing a fake unavailable state.
+ */
+function normalizeAiInsights(
+  raw: {
+    status?: string;
+    insights?: {
+      experienceAlignment?: string;
+      strengths?: { title?: string; items?: string[] } | null;
+      skillGaps?: { title?: string; items?: string[] } | null;
+      prioritizedImprovements?: { title?: string; items?: string[] } | null;
+      atsKeywordRecommendations?: { title?: string; items?: string[] } | null;
+      bulletPointImprovements?: { title?: string; items?: string[] } | null;
+    } | null;
+    reason?: string;
+    model?: string;
+    ai_disclaimer?: string;
+    aiDisclaimer?: string;
+  } | null | undefined
+): AiInsightsBlock | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const toSection = (section?: { title?: string; items?: string[] } | null) => ({
+    title: typeof section?.title === 'string' && section.title ? section.title : 'AI suggestions',
+    items: Array.isArray(section?.items) ? section!.items!.filter((i): i is string => typeof i === 'string') : [],
+  });
+  const status =
+    raw.status === 'available' || raw.status === 'unavailable' || raw.status === 'error' || raw.status === 'declined'
+      ? raw.status
+      : 'unavailable';
+  return {
+    status,
+    insights:
+      status === 'available' && raw.insights && typeof raw.insights.experienceAlignment === 'string'
+        ? {
+            experienceAlignment: raw.insights.experienceAlignment,
+            strengths: toSection(raw.insights.strengths),
+            skillGaps: toSection(raw.insights.skillGaps),
+            prioritizedImprovements: toSection(raw.insights.prioritizedImprovements),
+            atsKeywordRecommendations: toSection(raw.insights.atsKeywordRecommendations),
+            bulletPointImprovements: toSection(raw.insights.bulletPointImprovements),
+          }
+        : null,
+    reason: typeof raw.reason === 'string' ? raw.reason : undefined,
+    model: typeof raw.model === 'string' ? raw.model : undefined,
+    aiDisclaimer: raw.ai_disclaimer ?? raw.aiDisclaimer,
+  };
 }
 
 export async function checkFlaskHealth(): Promise<{ connected: boolean; version?: string; error?: string }> {
@@ -109,15 +165,21 @@ export async function runAnalysis(
   resumeText: string,
   jobDescriptionText: string,
   resumeTitle: string = 'Uploaded Resume',
-  jobTitle: string = 'Target Position'
+  jobTitle: string = 'Target Position',
+  /** Explicit consent from the analyze form to send the texts to Gemini. */
+  useGemini: boolean = false
 ): Promise<{ result: AnalysisResult; source: 'flask' | 'browser' }> {
   const mode = getEngineMode();
   const flaskUrl = getFlaskUrl();
 
+  // Local NLP math is fast; a Gemini call (when the user consented) needs
+  // noticeably longer, while keeping a bounded wait for the local fallback.
+  const timeoutMs = useGemini ? 90000 : 5000;
+
   if (mode === 'flask') {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       const res = await fetch(`${flaskUrl}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,7 +187,8 @@ export async function runAnalysis(
           resume_text: resumeText,
           job_description: jobDescriptionText,
           resume_title: resumeTitle,
-          job_title: jobTitle
+          job_title: jobTitle,
+          use_gemini: useGemini
         }),
         signal: controller.signal
       });
@@ -151,6 +214,9 @@ export async function runAnalysis(
           categoryGaps: data.category_gaps || [],
           topTermWeights: data.top_term_weights || [],
           recommendations: data.recommendations || [],
+          // Backend guarantees this wrapper object always exists on newer
+          // versions; normalize defensively for older backends.
+          aiInsights: normalizeAiInsights(data.ai_insights),
           atsCompatibilityReport: normalizeFlaskReport(
             data.ats_compatibility_report as RawFlaskReport | undefined,
             resumeText,

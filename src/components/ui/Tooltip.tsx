@@ -37,7 +37,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           role="tooltip"
           className={cn(
             'absolute z-50 pointer-events-none px-2.5 py-1 text-[11px] font-sans font-medium',
-            'text-[#F1F0EA] bg-[#131720] border border-white/[0.12] rounded-md shadow-[0_8px_24px_-4px_rgba(0,0,0,0.8)]',
+            'text-ink bg-panel border border-[var(--theme-border-strong)] rounded-md shadow-[0_8px_24px_-4px_rgba(4,14,12,0.8)]',
             'whitespace-nowrap transition-opacity duration-150',
             positionStyles[position]
           )}

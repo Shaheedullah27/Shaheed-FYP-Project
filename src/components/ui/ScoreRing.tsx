@@ -32,14 +32,15 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
   const reduced = useReducedMotion();
   const safeValue = Math.max(0, Math.min(100, Math.round(value)));
   const activeTone = tone ?? scoreTone(safeValue);
+  // Tones flow from the theme tokens so both light and dark stay readable.
   const color =
     activeTone === 'good'
-      ? '#79F2C0'
+      ? 'var(--color-mint)'
       : activeTone === 'warn'
-      ? '#F4BD73'
+      ? 'var(--color-amber-warn)'
       : activeTone === 'bad'
-      ? '#FF777F'
-      : '#62D9F5';
+      ? 'var(--color-coral-error)'
+      : 'var(--color-ion)';
 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -74,8 +75,8 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
         <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
           <defs>
             <linearGradient id={`ring-grad-${activeTone}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={color} />
-              <stop offset="100%" stopColor={activeTone === 'ion' ? '#A99BFF' : color} stopOpacity={0.75} />
+              <stop offset="0%" style={{ stopColor: color }} />
+              <stop offset="100%" style={{ stopColor: activeTone === 'ion' ? 'var(--color-champagne)' : color }} stopOpacity={0.75} />
             </linearGradient>
           </defs>
           <circle
@@ -98,12 +99,12 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
             initial={{ strokeDashoffset: reduced ? targetOffset : circumference }}
             animate={{ strokeDashoffset: targetOffset }}
             transition={{ duration: reduced ? 0 : 1.1, ease: [0.22, 1, 0.36, 1] }}
-            style={{ filter: `drop-shadow(0 0 6px ${color}66)` }}
+            style={{ filter: 'drop-shadow(0 0 6px color-mix(in srgb, ' + color + ' 40%, transparent))' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className="font-mono font-extrabold tabular-nums leading-none"
+            className="font-mono font-semibold tabular-nums leading-none"
             style={{ fontSize: size * 0.24, color }}
           >
             {display}

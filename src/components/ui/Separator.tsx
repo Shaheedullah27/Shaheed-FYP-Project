@@ -31,7 +31,7 @@ export const Separator: React.FC<SeparatorProps> = ({
         {...props}
       >
         <div className="h-[1px] flex-1 bg-white/[0.08]" />
-        <span className="text-[10px] font-mono uppercase tracking-widest text-silver/60">
+        <span className="text-[11px] font-mono uppercase text-silver/60">
           {label}
         </span>
         <div className="h-[1px] flex-1 bg-white/[0.08]" />

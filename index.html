@@ -11,9 +11,18 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Apply the saved theme before first paint to avoid a light/dark flash.
+      try {
+        var savedTheme = localStorage.getItem('resume-match-theme');
+        document.documentElement.dataset.theme = savedTheme === 'light' ? 'light' : 'dark';
+      } catch (error) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
   </head>
-  <body class="bg-[#0B0D12] text-[#F1F0EA] antialiased font-sans selection:bg-[#79F2C0]/25 selection:text-[#F1F0EA]">
+  <body class="bg-obsidian text-porcelain antialiased font-sans selection:bg-mint/25 selection:text-porcelain">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

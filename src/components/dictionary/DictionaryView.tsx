@@ -105,15 +105,15 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
       <motion.div variants={riseIn}>
         <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-[#79F2C0] mb-1">
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-mint mb-1">
               <BookOpen className="w-4 h-4" />
               <span>TAXONOMY KNOWLEDGE BASE</span>
               <span className="text-mute">·</span>
               <span className="text-mute font-mono">{skills.length} recognized skills</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-display font-bold tracking-tight text-ink">
+            <h2 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-ink">
               Skills Taxonomy & Aliases
-            </h1>
+            </h2>
             <p className="text-xs text-mute mt-0.5">
               Customize canonical terms, framework synonyms, and technical keyword mappings recognized by the matching engine.
             </p>
@@ -136,9 +136,9 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
         <motion.div 
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3.5 bg-[#79F2C0]/10 border border-[#79F2C0]/30 text-[#79F2C0] text-xs rounded-xl flex items-center gap-2.5 font-mono"
+          className="p-3.5 bg-mint/10 border border-mint/30 text-mint text-xs rounded-xl flex items-center gap-2.5 font-mono"
         >
-          <CheckCircle2 className="w-4 h-4 text-[#79F2C0] shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-mint shrink-0" />
           <span>{successMessage}</span>
         </motion.div>
       )}
@@ -146,8 +146,8 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
       {/* Add New Skill Form */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-5">
-          <h2 className="text-sm font-display font-bold text-ink mb-3 flex items-center gap-2">
-            <Plus className="w-4 h-4 text-[#79F2C0]" />
+          <h2 className="text-sm font-display font-semibold text-ink mb-3 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-mint" />
             <span>Register Custom Skill / Technology</span>
           </h2>
           <form onSubmit={handleAddSkill} className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
@@ -175,7 +175,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
                 className="field"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat} className="bg-[#131720] text-ink">{cat}</option>
+                  <option key={cat} value={cat} className="bg-graphite text-ink">{cat}</option>
                 ))}
               </select>
             </div>
@@ -227,7 +227,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
               className={cn(
                 'px-3 py-1.5 rounded-lg font-mono text-[11px] whitespace-nowrap transition-colors border',
                 selectedCategory === 'All'
-                  ? 'bg-[#79F2C0] text-[#0B0D12] font-bold border-[#79F2C0] shadow-[0_0_12px_rgba(121,242,192,0.3)]'
+                  ? 'bg-mint text-obsidian font-semibold border-mint shadow-[0_0_12px_rgba(101,221,181,0.3)]'
                   : 'bg-white/[0.03] text-mute hover:text-ink border-white/[0.06]'
               )}
             >
@@ -242,7 +242,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
                   className={cn(
                     'px-3 py-1.5 rounded-lg font-mono text-[11px] whitespace-nowrap transition-colors border',
                     active
-                      ? 'bg-[#79F2C0] text-[#0B0D12] font-bold border-[#79F2C0] shadow-[0_0_12px_rgba(121,242,192,0.3)]'
+                      ? 'bg-mint text-obsidian font-semibold border-mint shadow-[0_0_12px_rgba(101,221,181,0.3)]'
                       : 'bg-white/[0.03] text-mute hover:text-ink border-white/[0.06]'
                   )}
                 >
@@ -259,7 +259,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
         {filteredSkills.map((skill, idx) => (
           <div
             key={idx}
-            className="p-4 rounded-xl border border-white/[0.08] bg-[#131720] hover:bg-[#1B2230] hover:border-white/[0.14] transition-all flex flex-col justify-between"
+            className="p-4 rounded-xl border border-white/[0.08] bg-graphite hover:bg-slate-surface hover:border-white/[0.14] transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-1">
@@ -269,14 +269,14 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
                 {skill.isCustom && (
                   <button
                     onClick={() => handleRemoveSkill(skill.name)}
-                    className="text-mute hover:text-[#FF777F] transition-colors p-0.5 rounded"
+                    className="text-mute hover:text-coral-error transition-colors p-0.5 rounded"
                     title="Remove custom skill definition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-              <span className="text-[10px] font-mono text-[#62D9F5] block mb-2.5">
+              <span className="text-[10px] font-mono text-ion block mb-2.5">
                 {skill.category}
               </span>
             </div>
@@ -287,7 +287,7 @@ export const DictionaryView: React.FC<DictionaryViewProps> = ({ onDictionaryUpda
                 {skill.aliases.join(', ')}
               </div>
             ) : (
-              <div className="text-[10px] font-mono text-mute/50 italic">Standard canonical term</div>
+              <div className="text-[11px] font-mono text-mute/60">Standard canonical term</div>
             )}
           </div>
         ))}

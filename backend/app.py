@@ -18,6 +18,7 @@ from nlp_engine import analyze_full, load_skills_dictionary, DICT_PATH
 from parser import parse_uploaded_file
 from ats_checker import evaluate_ats_compatibility
 from report_generator import generate_text_report
+import gemini_client
 
 app = Flask(__name__)
 # Enable CORS for frontend
@@ -44,10 +45,11 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'service': 'AI ResumeMatch Flask API',
-        'version': '2.0.0',
+        'version': '2.0.1',
         'database': 'SQLite connected',
         'nlp_engine': 'scikit-learn TF-IDF + Cosine Similarity',
-        'supported_formats': list(ALLOWED_EXTENSIONS)
+        'supported_formats': list(ALLOWED_EXTENSIONS),
+        'ai_insights': 'configured' if gemini_client.has_api_key() else 'unconfigured'
     }), 200
 
 @app.route('/api/skills/dictionary', methods=['GET'])
@@ -155,6 +157,53 @@ def parse_resume():
     except Exception as e:
         return jsonify({'error': f"Failed to extract text from document: {str(e)}"}), 422
 
+def _build_ai_insights(
+    consented: bool,
+    resume_text: str,
+    job_description: str,
+    job_title: str,
+    local_summary: dict,
+):
+    """
+    Optional Gemini contextual insights.
+
+    The local TF-IDF / cosine analysis stays the authoritative score inside
+    `analysis_dict`; this block only adds prose-level insight fields. Failures
+    degrade to an explicit 'unavailable' status so the local analysis is
+    always returned and rendered.
+    """
+    if not consented:
+        return {
+            'status': 'declined',
+            'insights': None,
+            'reason': 'You chose not to send this analysis to Google Gemini; local results only.'
+        }
+    try:
+        insights = gemini_client.generate_resume_insights(
+            resume_text=resume_text,
+            job_description=job_description,
+            job_title=job_title,
+            local_summary=local_summary
+        )
+        return {
+            'status': 'available',
+            'insights': gemini_client.insights_to_api_dict(insights),
+            'model': gemini_client.get_gemini_model_name(),
+            'ai_disclaimer': (
+                'AI-generated assessment based only on the resume and job description '
+                'provided. It is advisory text and does not change or replace the '
+                'local match scores above/saved with this analysis.'
+            )
+        }
+    except gemini_client.GeminiUnavailableError as unavailable:
+        return gemini_client.insights_error_block(unavailable)
+    except Exception:
+        # Safety net: AI must never break the local analysis pipeline.
+        return gemini_client.insights_error_block(
+            gemini_client.GeminiUnavailableError('model_error', 'Unexpected AI insights failure')
+        )
+
+
 @app.route('/api/analyze', methods=['POST'])
 def run_analysis_endpoint():
     """
@@ -169,6 +218,9 @@ def run_analysis_endpoint():
     job_description = data.get('job_description', '').strip()
     resume_title = data.get('resume_title', 'Candidate Resume').strip()
     job_title = data.get('job_title', 'Target Position').strip()
+    # Explicit per-request consent flag. The resume/job text is only sent to
+    # Google Gemini when the user opted in on the analyze form.
+    use_gemini = bool(data.get('use_gemini', False))
     
     if not resume_text:
         return jsonify({'error': 'Resume text is missing or empty. Please upload or paste a resume.'}), 400
@@ -184,7 +236,22 @@ def run_analysis_endpoint():
         analysis_dict = analyze_full(resume_text, job_description, resume_title, job_title)
         analysis_dict['id'] = f"analysis-{uuid.uuid4().hex[:10]}"
         analysis_dict['timestamp'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-        
+
+        # Optional Gemini contextual insights. Explicit user consent only,
+        # exactly one API call, and both payloads are never logged.
+        analysis_dict['ai_insights'] = _build_ai_insights(
+            use_gemini,
+            resume_text,
+            job_description,
+            job_title,
+            {
+                'overall_score': analysis_dict.get('overall_score'),
+                'cosine_similarity': analysis_dict.get('cosine_similarity'),
+                'skill_match_score': analysis_dict.get('skill_match_score'),
+                'missing_skills': analysis_dict.get('missing_skills', []),
+            }
+        )
+
         # Persist to SQLite
         save_analysis(analysis_dict)
         

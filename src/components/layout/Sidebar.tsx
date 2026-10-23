@@ -1,18 +1,19 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  FileSearch, 
-  CheckCircle2, 
-  Target, 
-  ShieldCheck, 
+import React, { useEffect, useRef } from 'react';
+import {
+  LayoutDashboard,
+  FileSearch,
+  CheckCircle2,
+  Target,
+  ShieldCheck,
   ShieldAlert,
-  History, 
-  Terminal, 
+  History,
+  TrendingUp,
+  Terminal,
   Sparkles,
-  ChevronRight,
   BookOpen,
   GraduationCap,
-  X
+  Settings,
+  X,
 } from 'lucide-react';
 import { ActiveTab } from '../../types';
 import { cn } from '../../lib/ui';
@@ -21,151 +22,197 @@ interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   savedCount: number;
+  hasResults: boolean;
   isOpenMobile: boolean;
-  onToggleMobile: () => void;
+  onCloseMobile: () => void;
 }
+
+interface NavItem {
+  id: ActiveTab;
+  label: string;
+  icon: typeof LayoutDashboard;
+  count?: number;
+}
+
+const PRIMARY: Array<Omit<NavItem, 'count'> & { showWhen?: boolean }> = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'analyze', label: 'Analyze resume', icon: FileSearch },
+  { id: 'results', label: 'Latest results', icon: CheckCircle2, showWhen: true },
+  { id: 'history', label: 'Analysis history', icon: History },
+  { id: 'progress', label: 'Progress', icon: TrendingUp },
+];
+
+const MORE: NavItem[] = [
+  { id: 'ats-checker', label: 'ATS check', icon: ShieldCheck },
+  { id: 'skills', label: 'Skill gaps', icon: Target },
+  { id: 'dictionary', label: 'Skills list', icon: BookOpen },
+  { id: 'security', label: 'Resume security', icon: ShieldAlert },
+  { id: 'backend-guide', label: 'How it works', icon: Terminal },
+  { id: 'about', label: 'About', icon: GraduationCap },
+];
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   savedCount,
+  hasResults,
   isOpenMobile,
-  onToggleMobile,
+  onCloseMobile,
 }) => {
-  const navItems = [
-    { id: 'dashboard' as ActiveTab, label: 'Home', icon: LayoutDashboard },
-    { id: 'analyze' as ActiveTab, label: 'Compare a Resume', icon: FileSearch },
-    { id: 'results' as ActiveTab, label: 'Results', icon: CheckCircle2 },
-    { id: 'ats-checker' as ActiveTab, label: 'ATS Check', icon: ShieldCheck },
-    { id: 'security' as ActiveTab, label: 'Resume Security', icon: ShieldAlert },
-    { id: 'skills' as ActiveTab, label: 'Skill Gaps', icon: Target },
-    { id: 'dictionary' as ActiveTab, label: 'Skills List', icon: BookOpen },
-    { id: 'history' as ActiveTab, label: 'Past Comparisons', icon: History, count: savedCount },
-    { id: 'backend-guide' as ActiveTab, label: 'How the App Works', icon: Terminal },
-    { id: 'about' as ActiveTab, label: 'About This Project', icon: GraduationCap },
-  ];
+  const asideRef = useRef<HTMLElement>(null);
 
   const handleSelect = (tab: ActiveTab) => {
     onTabChange(tab);
-    if (isOpenMobile) {
-      onToggleMobile();
-    }
+    if (isOpenMobile) onCloseMobile();
+  };
+
+  // While the mobile drawer is open: lock page scroll, move focus inside it,
+  // trap Tab, and support Escape to close.
+  useEffect(() => {
+    if (!isOpenMobile) return;
+    const node = asideRef.current;
+    const getFocusable = () =>
+      Array.from(
+        node?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) || []
+      ).filter(element => element.offsetParent !== null);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    getFocusable()[0]?.focus();
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCloseMobile();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpenMobile, onCloseMobile]);
+
+  const renderItem = (item: NavItem, compact = false) => {
+    const Icon = item.icon;
+    const isActive = activeTab === item.id;
+    return (
+      <li key={item.id}>
+        <button
+          type="button"
+          onClick={() => handleSelect(item.id)}
+          aria-current={isActive ? 'page' : undefined}
+          className={cn(
+            'flex w-full items-center justify-between gap-3 rounded-lg text-left transition-colors',
+            compact ? 'px-3 py-2 text-[13px]' : 'px-3 py-2.5 text-sm',
+            isActive
+              ? 'bg-mint/10 font-semibold text-mint'
+              : 'font-medium text-silver hover:bg-white/[0.05] hover:text-porcelain'
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{item.label}</span>
+          </span>
+          {item.id === 'history' && savedCount > 0 && (
+            <span
+              className={cn(
+                'shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[10px] tabular-nums',
+                isActive
+                  ? 'border-mint/30 bg-mint/10 text-mint'
+                  : 'border-white/10 bg-white/5 text-silver'
+              )}
+            >
+              {savedCount}
+            </span>
+          )}
+        </button>
+      </li>
+    );
   };
 
   return (
     <>
-      {/* Mobile Menu Backdrop */}
       {isOpenMobile && (
-        <div 
-          onClick={onToggleMobile} 
-          className="fixed inset-0 z-40 bg-[#0B0D12]/80 backdrop-blur-sm lg:hidden"
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 cursor-default bg-obsidian/80 lg:hidden"
         />
       )}
 
-      {/* Sidebar Container */}
-      <aside 
+      <aside
+        ref={asideRef}
+        aria-label="Main navigation"
+        role={isOpenMobile ? 'dialog' : undefined}
+        aria-modal={isOpenMobile ? true : undefined}
         className={cn(
-          'fixed top-0 bottom-0 left-0 z-50 flex flex-col w-64 lg:w-64',
-          'bg-[#131720]/95 backdrop-blur-md border-r border-white/[0.08] text-silver transition-transform duration-300 ease-out',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/[0.08] bg-graphite transition-transform duration-200 ease-out',
           'lg:translate-x-0',
-          isOpenMobile ? 'translate-x-0 shadow-[24px_0_60px_-30px_rgba(0,0,0,0.9)]' : '-translate-x-full'
+          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        {/* Brand Area */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.08]">
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-[10px] bg-[#79F2C0]/15 border border-[#79F2C0]/35 text-[#79F2C0] shadow-[0_4px_16px_-4px_rgba(121,242,192,0.35)]">
-              <Sparkles className="w-4.5 h-4.5" strokeWidth={2.4} />
+        <div className="flex items-center justify-between px-5 py-5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-mint/30 bg-mint/10 text-mint">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <span className="font-heading text-sm font-bold tracking-tight text-porcelain block leading-tight">
+              <span className="block font-heading text-sm font-semibold leading-tight text-porcelain">
                 AI ResumeMatch
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-wider text-silver/80 block mt-0.5">
-                Resume intelligence lab
-              </span>
+              <span className="block text-[11px] text-silver">Resume and job comparison</span>
             </div>
           </div>
-          <button 
-            onClick={onToggleMobile} 
-            className="p-1.5 rounded-lg text-silver hover:text-porcelain hover:bg-white/5 transition-colors lg:hidden"
-            aria-label="Close menu"
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Close navigation menu"
+            className="rounded-lg p-1.5 text-silver transition-colors hover:bg-white/5 hover:text-porcelain lg:hidden"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        {/* Navigation Section */}
-        <nav aria-label="Main navigation" className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-          <div className="px-3 mb-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-silver/60">
-            Workspace
-          </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelect(item.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className={cn(
-                  'group relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all duration-180',
-                  isActive
-                    ? 'bg-[#79F2C0]/10 text-[#79F2C0] border border-[#79F2C0]/25 shadow-[inset_0_1px_0_rgba(121,242,192,0.12)]'
-                    : 'border border-transparent text-silver hover:bg-white/[0.04] hover:text-porcelain'
-                )}
-              >
-                <span className="flex items-center gap-3 truncate">
-                  <Icon
-                    className={cn(
-                      'w-4 h-4 shrink-0 transition-colors',
-                      isActive ? 'text-[#79F2C0]' : 'text-silver group-hover:text-porcelain'
-                    )}
-                  />
-                  <span className="truncate">{item.label}</span>
-                </span>
-                {item.count !== undefined ? (
-                  <span
-                    className={cn(
-                      'text-[10px] tabular-nums font-mono px-1.5 py-0.5 rounded-md border transition-colors',
-                      isActive
-                        ? 'bg-[#79F2C0]/15 border-[#79F2C0]/30 text-[#79F2C0]'
-                        : 'bg-white/5 border-white/10 text-silver'
-                    )}
-                  >
-                    {item.count}
-                  </span>
-                ) : (
-                  isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                )}
-                {isActive && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-[#79F2C0] shadow-[0_0_8px_rgba(121,242,192,0.7)]"
-                  />
-                )}
-              </button>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          <p className="px-3 pb-1.5 pt-2 text-xs font-semibold text-silver">
+            Main
+          </p>
+          <ul className="space-y-0.5">
+            {PRIMARY.filter(item => !item.showWhen || hasResults).map(item => renderItem(item))}
+          </ul>
+
+          <p className="px-3 pb-1.5 pt-6 text-xs font-semibold text-silver">
+            More tools
+          </p>
+          <ul className="space-y-0.5">{MORE.map(item => renderItem(item, true))}</ul>
         </nav>
 
-        {/* Explainability Badge Footer */}
-        <div className="p-3.5 mx-3 mb-4 rounded-xl bg-[#1B2230] border border-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="relative flex w-2 h-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#79F2C0] opacity-60 animate-ping" />
-              <span className="relative inline-flex w-2 h-2 rounded-full bg-[#79F2C0]" />
-            </span>
-            <span className="text-[11px] font-semibold text-porcelain">How matches are scored</span>
-          </div>
-          <p className="text-[11px] text-silver leading-relaxed">
-            The app compares text and skills locally on this device. No external AI service required.
+        <div className="border-t border-white/[0.08] p-3">
+          <ul>
+            {renderItem({ id: 'settings', label: 'Settings', icon: Settings }, true)}
+          </ul>
+          <p className="px-3 pt-2 text-[11px] leading-relaxed text-silver/80">
+            Your files and results stay in this browser.
           </p>
-        </div>
-
-        {/* User / Meta Footer */}
-        <div className="px-5 py-3 border-t border-white/[0.08] flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-silver/70">
-          <span>Final-Year Project</span>
         </div>
       </aside>
     </>
