@@ -889,23 +889,6 @@ select.field option {
     linear-gradient(rgba(16, 42, 40, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(16, 42, 40, 0.06) 1px, transparent 1px);
 }
-[data-theme="light"] .recharts-cartesian-axis-tick text {
-  fill: var(--color-silver) !important;
-}
-[data-theme="light"] .recharts-cartesian-grid line,
-[data-theme="light"] .recharts-cartesian-axis line {
-  stroke: var(--theme-border) !important;
-}
-[data-theme="light"] .recharts-legend-wrapper {
-  color: var(--color-silver) !important;
-}
-[data-theme="light"] .recharts-tooltip-wrapper > * {
-  background-color: #FCFBF4 !important;
-  border-color: rgba(16, 42, 40, 0.12) !important;
-  color: #102A28 !important;
-  box-shadow: 0 8px 24px -8px rgba(16, 42, 40, 0.18) !important;
-}
-
 /* ============================================================
    Light theme: keep hairline borders and subtle fills visible
    and green-tinted (dark-theme utilities use translucent ivory)

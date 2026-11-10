@@ -1,12 +1,8 @@
-/**
- * Lightweight upload validation.
- *
- * Kept free of pdf.js/mammoth imports so the analysis page can validate a
- * file instantly without downloading the document-parsing bundle.
- */
+/** Client-side upload checks; the Flask backend repeats every validation. */
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-export const ACCEPTED_FILE_TYPES = '.pdf,.docx,.doc,.txt,.md,.rtf';
+export const ACCEPTED_FILE_TYPES = '.pdf,.docx';
+const VALID_EXTENSIONS = ['.pdf', '.docx'];
 
 export function validateDocumentFile(file: File): { valid: boolean; error?: string } {
   if (!file) {
@@ -23,13 +19,10 @@ export function validateDocumentFile(file: File): { valid: boolean; error?: stri
   }
 
   const name = file.name.toLowerCase();
-  const validExts = ['.pdf', '.docx', '.doc', '.txt', '.md', '.rtf'];
-  const hasValidExt = validExts.some(ext => name.endsWith(ext));
-
-  if (!hasValidExt) {
+  if (!VALID_EXTENSIONS.some(extension => name.endsWith(extension))) {
     return {
       valid: false,
-      error: 'This file type is not supported. Choose a PDF, Word document (.docx), or text file (.txt).',
+      error: 'This file type is not supported. Choose a PDF or Word document (.docx).',
     };
   }
 

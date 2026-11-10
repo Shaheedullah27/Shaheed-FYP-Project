@@ -1,190 +1,223 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  GraduationCap, 
-  BookOpen, 
-  Cpu, 
-  Database, 
-  ShieldCheck, 
-  HelpCircle, 
-  CheckCircle2, 
-  Terminal, 
-  Layers, 
+import {
+  GraduationCap,
+  BookOpen,
+  Cpu,
+  CheckCircle2,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   ArrowRight,
-  Code2,
-  FileText,
-  ChevronDown,
-  ChevronUp
+  Layers,
+  ShieldCheck,
+  Target,
 } from 'lucide-react';
 import { ActiveTab } from '../../types';
 import { GlowPanel } from '../ui/GlowPanel';
-import { cn, riseIn, stagger } from '../../lib/ui';
+import { Button } from '../ui/Button';
+import { riseIn, stagger } from '../../lib/ui';
 
 interface AboutViewProps {
   onTabChange: (tab: ActiveTab) => void;
 }
 
+const SCOPE = [
+  'Upload a resume as PDF or DOCX.',
+  'Paste a job description as text.',
+  'Extract readable text on the Flask backend.',
+  'Calculate TF-IDF cosine similarity as the match percentage.',
+  'Identify matched, missing and resume keywords.',
+  'Calculate basic ATS-style keyword coverage.',
+  'Show rule-based improvement suggestions.',
+  'Display all results on one results page.',
+];
+
+const WALKTHROUGH = [
+  {
+    step: '01 // Upload',
+    action: 'Choose a PDF or DOCX resume.',
+    note: 'Flask validates the file and extracts text with PyMuPDF or python-docx.',
+  },
+  {
+    step: '02 // Describe the role',
+    action: 'Paste the target job description.',
+    note: 'The posting supplies both the TF-IDF comparison text and the job keywords.',
+  },
+  {
+    step: '03 // Analyze',
+    action: 'Run the comparison.',
+    note: 'scikit-learn builds the vectors; cosine similarity and keyword coverage are calculated.',
+  },
+  {
+    step: '04 // Review',
+    action: 'Read the match percentage, keyword lists and suggestions.',
+    note: 'Every value comes from the two documents. No score is hardcoded or randomized.',
+  },
+];
+
+const FAQS = [
+  {
+    q: 'How is the resume–job match percentage calculated?',
+    a: 'The backend cleans both documents, converts them into TF-IDF vectors with scikit-learn, and calculates cosine similarity. The cosine value is multiplied by 100 and rounded to one decimal place. It measures shared vocabulary and phrasing, not the probability of being hired.',
+  },
+  {
+    q: 'Is keyword coverage an official ATS score?',
+    a: 'No. It is a basic keyword check: matched dictionary keywords divided by all dictionary keywords identified in the job description. It does not simulate Workday, Greenhouse, Taleo, or any commercial applicant tracking system, and it makes no compatibility claim.',
+  },
+  {
+    q: 'Why might a relevant resume score only around 50–60%?',
+    a: 'TF-IDF is a lexical method. Different wording, synonyms, acronyms outside the keyword dictionary, or a short posting can lower the score even when the experience is relevant. The keyword lists and coverage help explain where the overlap is weak.',
+  },
+  {
+    q: 'Does the app invent missing experience or rewrite the resume?',
+    a: 'No. Suggestions are rule-based and conditional. Missing keywords are phrased as “if you have genuine experience with …”, and the app never generates work history, qualifications, certifications, achievements, or skills the user does not have.',
+  },
+  {
+    q: 'What was intentionally removed from the earlier version?',
+    a: 'Authentication, user roles, analysis history, downloadable reports, Google Gemini integration, generative resume rewriting, advanced ATS simulation, the security dashboard, and composite scoring were removed. The visual design, Three.js scene and Emerald Luxe interface were preserved.',
+  },
+];
+
 export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
-  const faqs = [
-    {
-      q: 'How does the app compare a resume with a job posting?',
-      a: 'It tokenizes both documents into unigram and bigram features, applies TF-IDF (Term Frequency-Inverse Document Frequency) with sublinear scaling to weight distinguishing technical vocabulary, and calculates their cosine similarity. The output is a normalized lexical overlap index, not a hiring prediction.'
-    },
-    {
-      q: 'Does repeating a skill artificially inflate the score?',
-      a: 'No. Sublinear term-frequency scaling (1 + log(tf)) rapidly diminishes the marginal gain of repeated keywords. An isolated term mentioned dozens of times cannot overwhelm the broader semantic profile of the job specification.'
-    },
-    {
-      q: 'What is the distinction between Semantic Match and ATS Readability?',
-      a: 'Semantic Match measures vocabulary and capability overlap against the job description. ATS Readability tests layout extractability, section header detection, and contact coordinates. Neither score represents a commercial ATS vendor endorsement.'
-    },
-    {
-      q: 'Are students penalized for lack of corporate tenure?',
-      a: 'No. The structural parser incorporates student-friendly guardrails: substantial Academic Projects and Education sections substitute for corporate work history without triggering penalty deductions.'
-    },
-    {
-      q: 'Can the text parser verify complex visual multi-column layouts?',
-      a: 'No. Pure text extraction streams cannot reliably verify multi-column visual reading order or text embedded in canvas images. Users are advised to review raw formatting in simple single-column or clean two-column layouts.'
-    }
-  ];
-
-  const demoSteps = [
-    {
-      step: '01 // Initialize Session',
-      action: 'Load standard demonstration profiles or paste an unformatted technical resume.',
-      tip: 'Supports PDF binary streams, DOCX OpenXML packages, or raw plaintext inputs.'
-    },
-    {
-      step: '02 // Define Target Specification',
-      action: 'Paste the target position requirements, responsibilities, and qualifications.',
-      tip: 'The parser extracts both explicit requirements and preferred technical skills.'
-    },
-    {
-      step: '03 // Execute Multi-Engine Comparison',
-      action: 'Click “Analyze My Resume” to generate the comparison scores.',
-      tip: 'Calculations are pure mathematical functions: identical inputs produce identical scores.'
-    },
-    {
-      step: '04 // Inspect Competency Vectors',
-      action: 'Review matched skills, missing proficiencies, and category-level coverage.',
-      tip: 'All scoring reflects genuine analysis output without simulated mock figures.'
-    },
-    {
-      step: '05 // Audit ATS Extractability',
-      action: 'Open ATS Compatibility to verify contact data and standard resume headers.',
-      tip: 'Flags layout ambiguities and identifies student guardrail substitutions.'
-    },
-    {
-      step: '06 // Curate Skill Taxonomy',
-      action: 'Open Skills List to add emerging frameworks or canonical synonyms.',
-      tip: 'Custom definitions instantly integrate with future analysis runs.'
-    },
-    {
-      step: '07 // Export Standalone Audit',
-      action: 'Generate self-contained HTML reports for persistent offline archiving.',
-      tip: 'Includes full scoring breakdown, skill gap lists, and formatting recommendations.'
-    }
-  ];
-
   return (
-    <motion.div 
-      initial="hidden"
-      animate="show"
-      variants={stagger}
-      className="space-y-6"
-    >
-      {/* Page Header */}
+    <motion.div initial="hidden" animate="show" variants={stagger} className="space-y-6">
+      {/* Header */}
       <motion.div variants={riseIn}>
-        <GlowPanel glow className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <GlowPanel glow className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-mint mb-1">
-              <GraduationCap className="w-4 h-4" />
-              <span>FINAL YEAR PROJECT SPECIFICATION</span>
+            <div className="mb-1 flex items-center gap-2 font-mono text-xs font-semibold text-mint">
+              <GraduationCap className="h-4 w-4" aria-hidden="true" />
+              <span>FINAL YEAR PROJECT</span>
             </div>
-            <h2 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-ink">
+            <h2 className="font-heading text-xl font-semibold tracking-tight text-porcelain md:text-2xl">
               About AI ResumeMatch
             </h2>
-            <p className="text-xs text-mute mt-0.5">
-              Deterministic TF-IDF similarity, taxonomy-driven skill extraction, and ATS layout readability architecture.
+            <p className="mt-0.5 max-w-xl text-xs leading-relaxed text-silver">
+              An explainable NLP resume and job-description matching system built around TF-IDF,
+              cosine similarity and keyword analysis.
             </p>
           </div>
 
-          <button
+          <Button
+            variant="primary"
+            size="md"
+            className="shrink-0"
             onClick={() => onTabChange('analyze')}
-            className="btn-primary text-xs shrink-0"
+            leftIcon={<Sparkles className="h-4 w-4" />}
+            rightIcon={<ArrowRight className="h-4 w-4" />}
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-            <span>Analyze a resume</span>
-          </button>
+            Analyze a resume
+          </Button>
         </GlowPanel>
       </motion.div>
 
-      {/* Abstract & Academic Objectives Grid */}
-      <motion.div variants={riseIn} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Purpose + scope */}
+      <motion.div variants={riseIn} className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <GlowPanel className="p-6">
-          <h2 className="text-sm font-display font-semibold text-ink mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-mint" />
-            <span>Research Motivation & Problem Statement</span>
+          <h2 className="mb-3 flex items-center gap-2 font-heading text-sm font-semibold text-porcelain">
+            <BookOpen className="h-4 w-4 text-mint" aria-hidden="true" />
+            Purpose and problem statement
           </h2>
-          <p className="text-xs text-mute leading-relaxed mb-3">
-            Modern recruitment workflows rely heavily on automated applicant tracking systems to triage candidate pools. Job seekers frequently struggle to evaluate whether their resumes articulate technical competencies in ways commercial parsers can extract reliably.
+          <p className="mb-3 text-xs leading-relaxed text-silver">
+            Job seekers often cannot tell whether their resume communicates the language of a
+            specific role. Commercial screening tools are opaque, and many resume tools rely on
+            generative AI that can invent claims.
           </p>
-          <p className="text-xs text-mute leading-relaxed">
-            <strong className="text-ink">AI ResumeMatch</strong> provides a transparent, explainable alternative to black-box candidate evaluation by combining sublinear TF-IDF cosine similarity, structured skill taxonomy classification, and heuristic layout extractability audits.
+          <p className="text-xs leading-relaxed text-silver">
+            This project provides a transparent alternative: the user can see the exact match
+            percentage, the keywords that were found, the keywords that were not found, the keyword
+            coverage formula, and the rules that produced each suggestion.
           </p>
         </GlowPanel>
 
         <GlowPanel className="p-6">
-          <h2 className="text-sm font-display font-semibold text-ink mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-ion" />
-            <span>Core Technical Deliverables</span>
+          <h2 className="mb-3 flex items-center gap-2 font-heading text-sm font-semibold text-porcelain">
+            <CheckCircle2 className="h-4 w-4 text-ion" aria-hidden="true" />
+            Final project scope
           </h2>
-          <ul className="space-y-2 text-xs text-mute leading-relaxed">
-            <li className="flex items-start gap-2">
-              <span className="font-mono text-mint">•</span>
-              <span><strong className="text-ink">Deterministic NLP:</strong> Scikit-learn TF-IDF vectorization with n-gram tokenization and sublinear term frequency weighting.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-mono text-ion">•</span>
-              <span><strong className="text-ink">Multi-Domain Taxonomy:</strong> Multi-category skill extraction covering languages, databases, web development, cloud, and project management.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-mono text-plasma">•</span>
-              <span><strong className="text-ink">Extractability Heuristics:</strong> RFC-compliant email detection, phone parsing, and heading hierarchy verification.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-mono text-amber-warn">•</span>
-              <span><strong className="text-ink">Academic Equity:</strong> Protected student mode allowing substantial coursework to substitute for employment history.</span>
-            </li>
+          <ul className="space-y-2 text-xs leading-relaxed text-silver">
+            {SCOPE.map(item => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-0.5 font-mono text-mint">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
           </ul>
         </GlowPanel>
       </motion.div>
 
-      {/* Step-by-Step Viva Presentation Demo Guide */}
+      {/* Method */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <div className="flex items-center gap-2 mb-2 text-xs font-mono font-semibold text-mint">
-            <Layers className="w-4 h-4" />
+          <div className="mb-4 flex items-center gap-2 font-mono text-xs font-semibold text-mint">
+            <Cpu className="h-4 w-4" aria-hidden="true" />
+            <span>METHODOLOGY</span>
+          </div>
+          <h2 className="mb-4 font-heading text-base font-semibold text-porcelain">
+            Two separate, explainable metrics
+          </h2>
+
+          <div className="grid gap-4 text-xs sm:grid-cols-2">
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="mb-2 flex items-center gap-2 font-semibold text-porcelain">
+                <Target className="h-4 w-4 text-mint" aria-hidden="true" />
+                Resume–job text match
+              </div>
+              <p className="leading-relaxed text-silver">
+                TF-IDF vectorisation from scikit-learn, followed by cosine similarity. The score is
+                a lexical overlap measure from 0 to 100, not a hiring probability.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+              <div className="mb-2 flex items-center gap-2 font-semibold text-porcelain">
+                <ShieldCheck className="h-4 w-4 text-ion" aria-hidden="true" />
+                Basic keyword coverage
+              </div>
+              <p className="leading-relaxed text-silver">
+                A maintained skills dictionary with aliases identifies job keywords. Coverage =
+                matched job keywords ÷ total job keywords × 100, with a zero-division guard.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 font-mono text-[11px] leading-relaxed text-silver">
+            <p>match_percentage = cosine_similarity(tfidf(resume), tfidf(job)) × 100</p>
+            <p className="mt-1">
+              keyword_coverage = matched_job_keywords / total_job_keywords × 100
+            </p>
+          </div>
+        </GlowPanel>
+      </motion.div>
+
+      {/* Viva walkthrough */}
+      <motion.div variants={riseIn}>
+        <GlowPanel className="p-6">
+          <div className="mb-2 flex items-center gap-2 font-mono text-xs font-semibold text-mint">
+            <Layers className="h-4 w-4" aria-hidden="true" />
             <span>DEMONSTRATION WALKTHROUGH</span>
           </div>
-          <h2 className="text-base font-display font-semibold text-ink mb-1.5">
-            Step-by-Step Viva Evaluation Guide
+          <h2 className="mb-1.5 font-heading text-base font-semibold text-porcelain">
+            Four steps for the viva
           </h2>
-          <p className="text-xs text-mute mb-5">
-            Recommended sequence for presenting system architecture, algorithmic calculations, and real-time report generation:
+          <p className="mb-5 text-xs leading-relaxed text-silver">
+            A short sequence for demonstrating the complete workflow and the NLP calculation.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {demoSteps.map((d, idx) => (
-              <div key={idx} className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.08] text-xs">
-                <div className="font-mono font-semibold text-mint mb-1">{d.step}</div>
-                <p className="text-ink font-medium mb-2 leading-relaxed">{d.action}</p>
-                <div className="text-[11px] text-ion bg-ion/8 p-2.5 rounded-lg border border-ion/20 font-mono">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {WALKTHROUGH.map(item => (
+              <div
+                key={item.step}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-xs"
+              >
+                <div className="mb-1 font-mono font-semibold text-mint">{item.step}</div>
+                <p className="mb-2 font-medium leading-relaxed text-porcelain">{item.action}</p>
+                <div className="rounded-lg border border-ion/20 bg-ion/[0.06] p-2.5 font-mono text-[11px] leading-relaxed text-ion">
                   <strong className="text-ion">Note: </strong>
-                  {d.tip}
+                  {item.note}
                 </div>
               </div>
             ))}
@@ -192,40 +225,51 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
         </GlowPanel>
       </motion.div>
 
-      {/* Examiner FAQ */}
+      {/* FAQ */}
       <motion.div variants={riseIn}>
         <GlowPanel className="p-6">
-          <h2 className="text-base font-display font-semibold text-ink mb-1 flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-mint" />
-            <span>Academic Defense FAQ</span>
+          <h2 className="mb-1 flex items-center gap-2 font-heading text-base font-semibold text-porcelain">
+            <HelpCircle className="h-4 w-4 text-mint" aria-hidden="true" />
+            Academic defence FAQ
           </h2>
-          <p className="text-xs text-mute mb-5">
-            Key questions and methodological justifications for final-year project examiners:
+          <p className="mb-5 text-xs leading-relaxed text-silver">
+            Methodological questions an examiner may ask about the simplified scope.
           </p>
 
           <div className="space-y-3">
-            {faqs.map((faq, idx) => {
-              const isOpen = activeFaq === idx;
+            {FAQS.map((faq, index) => {
+              const isOpen = activeFaq === index;
               return (
-                <div key={idx} className="rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.02]">
+                <div
+                  key={faq.q}
+                  className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]"
+                >
                   <button
-                    onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full p-4 text-left font-semibold text-xs text-ink hover:bg-white/[0.03] flex items-center justify-between transition-colors"
+                    type="button"
+                    onClick={() => setActiveFaq(isOpen ? null : index)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between p-4 text-left text-xs font-semibold text-porcelain transition-colors hover:bg-white/[0.03]"
                   >
                     <span>{faq.q}</span>
-                    <span className="text-mint ml-3 shrink-0">
-                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <span className="ml-3 shrink-0 text-mint">
+                      {isOpen ? (
+                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                      )}
                     </span>
                   </button>
-                  <AnimatePresence>
+                  <AnimatePresence initial={false}>
                     {isOpen && (
-                      <motion.div 
+                      <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="px-4 pb-4 pt-1 text-xs text-mute leading-relaxed border-t border-white/[0.06]"
+                        className="overflow-hidden"
                       >
-                        {faq.a}
+                        <p className="border-t border-white/[0.06] px-4 pb-4 pt-3 text-xs leading-relaxed text-silver">
+                          {faq.a}
+                        </p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -238,3 +282,5 @@ export const AboutView: React.FC<AboutViewProps> = ({ onTabChange }) => {
     </motion.div>
   );
 };
+
+export default AboutView;

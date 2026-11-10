@@ -1,386 +1,400 @@
-import re
-import os
+"""Core NLP logic for AI ResumeMatch.
+
+The module deliberately stays small and explainable:
+
+1. TF-IDF vectorisation + cosine similarity -> resume/job text match percentage.
+2. Dictionary-based keyword detection -> matched, missing and resume keywords.
+3. Keyword coverage -> matched job keywords / all identified job keywords.
+4. Rule-based suggestions derived only from the analysis output.
+
+There is no database, generative AI, or hidden scoring model in this pipeline.
+"""
+
 import json
-import math
-from typing import Dict, Any, List, Tuple
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    import numpy as np
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    SKLEARN_AVAILABLE = False
+import os
+import re
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Tuple
 
-from ats_checker import evaluate_ats_compatibility
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-DICT_PATH = os.path.join(os.path.dirname(__file__), 'skills_dictionary.json')
+DICT_PATH = os.path.join(os.path.dirname(__file__), "skills_dictionary.json")
 
-# Standard English Stopwords for fallback
-STOP_WORDS = {
-    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are',
-    'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but',
-    'by', 'can', 'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from',
-    'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him',
-    'himself', 'his', 'how', 'i', 'if', 'in', 'into', 'is', 'it', 'its', 'itself', 'just', 'me',
-    'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now', 'of', 'off', 'on', 'once', 'only',
-    'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 'same', 'she', 'should',
-    'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then',
-    'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up',
-    'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why',
-    'will', 'with', 'you', 'your', 'yours', 'yourself', 'yourselves'
-}
+
+# ---------------------------------------------------------------------------
+# Text preprocessing
+# ---------------------------------------------------------------------------
 
 def clean_text(text: str) -> str:
-    """Preprocesses and normalizes text for NLP processing."""
-    if not text:
+    """Normalise text for vectorisation and keyword comparison.
+
+    Lower-cases the text, keeps technical characters such as ``+``, ``#`` and
+    ``.`` (so ``C++``, ``C#`` and ``Node.js`` survive), and collapses all
+    remaining punctuation and whitespace into single spaces.
+    """
+    if not isinstance(text, str):
         return ""
+
     text = text.lower()
-    text = re.sub(r'[^a-z0-9+#.\s]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"[\u2018\u2019]", "'", text)
+    text = re.sub(r"[^a-z0-9+#.\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
-def calculate_tfidf_similarity(resume_text: str, jd_text: str) -> Tuple[float, List[Dict[str, Any]]]:
+
+# ---------------------------------------------------------------------------
+# TF-IDF / cosine similarity
+# ---------------------------------------------------------------------------
+
+def calculate_tfidf_similarity(resume_text: str, job_description: str) -> float:
+    """Return cosine similarity between resume and job description as 0-100.
+
+    Uses scikit-learn's TF-IDF vectoriser with sublinear term frequency. If
+    either document contains no usable vocabulary (for example, only stop
+    words), the similarity is safely reported as 0.0 instead of raising an
+    error.
     """
-    Computes explainable TF-IDF Cosine Similarity between resume and job description.
-    Uses scikit-learn when available, or mathematically identical standard library implementation.
-    """
-    if SKLEARN_AVAILABLE:
+    resume_clean = clean_text(resume_text)
+    job_clean = clean_text(job_description)
+
+    if not resume_clean or not job_clean:
+        return 0.0
+
+    try:
         vectorizer = TfidfVectorizer(
-            stop_words='english',
-            ngram_range=(1, 2),
-            sublinear_tf=True
+            stop_words="english",
+            sublinear_tf=True,
         )
-        tfidf_matrix = vectorizer.fit_transform([resume_text, jd_text])
-        feature_names = np.array(vectorizer.get_feature_names_out())
-        similarity_matrix = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])
-        score = float(similarity_matrix[0][0]) * 100.0
-        rounded_score = round(min(100.0, max(0.0, score)), 1)
-        
-        res_weights = tfidf_matrix[0].toarray()[0]
-        jd_weights = tfidf_matrix[1].toarray()[0]
-        combined = res_weights + jd_weights
-        top_indices = np.argsort(combined)[::-1][:20]
-        
-        skills_dict = load_skills_dictionary()
-        all_skill_names = set()
-        for cat_skills in skills_dict.values():
-            for s in cat_skills:
-                all_skill_names.add(s['name'].lower())
-        
-        term_weights = []
-        for idx in top_indices:
-            if combined[idx] > 0.04:
-                term_str = str(feature_names[idx])
-                term_weights.append({
-                    'term': term_str,
-                    'resumeWeight': round(float(res_weights[idx]), 4),
-                    'jobWeight': round(float(jd_weights[idx]), 4),
-                    'isSkill': any(term_str in s or s in term_str for s in all_skill_names)
-                })
-        return rounded_score, term_weights
-    else:
-        # Pure Python standard-library implementation matching scikit-learn
-        def tokenize(txt):
-            clean = re.sub(r'[^a-z0-9+#.\s]', ' ', txt.lower())
-            words = [w for w in clean.split() if len(w) > 1 and w not in STOP_WORDS]
-            bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words)-1)]
-            return words + bigrams
+        matrix = vectorizer.fit_transform([resume_clean, job_clean])
+        similarity = cosine_similarity(matrix[0:1], matrix[1:2])[0][0]
+    except ValueError:
+        # Raised by scikit-learn when the vocabulary is empty (e.g. stop words only).
+        return 0.0
 
-        r_tokens = tokenize(resume_text)
-        j_tokens = tokenize(jd_text)
-        vocab = list(set(r_tokens + j_tokens))
-        
-        if not vocab:
-            return 0.0, []
+    return round(min(100.0, max(0.0, float(similarity) * 100.0)), 1)
 
-        tf_r = {}
-        tf_j = {}
-        for t in r_tokens: tf_r[t] = tf_r.get(t, 0) + 1
-        for t in j_tokens: tf_j[t] = tf_j.get(t, 0) + 1
 
-        v_r = {}
-        v_j = {}
-        norm_r_sq = 0.0
-        norm_j_sq = 0.0
+# ---------------------------------------------------------------------------
+# Skills dictionary and keyword comparison
+# ---------------------------------------------------------------------------
 
-        for t in vocab:
-            df = (1 if t in tf_r else 0) + (1 if t in tf_j else 0)
-            idf = math.log((1 + 2) / (1 + df)) + 1.0
-            
-            raw_r = tf_r.get(t, 0)
-            sub_r = (1.0 + math.log(raw_r)) if raw_r > 0 else 0.0
-            w_r = sub_r * idf
-            v_r[t] = w_r
-            norm_r_sq += w_r * w_r
-            
-            raw_j = tf_j.get(t, 0)
-            sub_j = (1.0 + math.log(raw_j)) if raw_j > 0 else 0.0
-            w_j = sub_j * idf
-            v_j[t] = w_j
-            norm_j_sq += w_j * w_j
-
-        norm_r = math.sqrt(norm_r_sq)
-        norm_j = math.sqrt(norm_j_sq)
-
-        if norm_r == 0 or norm_j == 0:
-            return 0.0, []
-
-        dot_product = sum((v_r[t] / norm_r) * (v_j[t] / norm_j) for t in vocab)
-        rounded_score = round(min(100.0, max(0.0, dot_product * 100.0)), 1)
-
-        term_weights = []
-        for t in vocab:
-            l2_r = v_r[t] / norm_r
-            l2_j = v_j[t] / norm_j
-            if l2_r > 0.04 or l2_j > 0.04:
-                term_weights.append({
-                    'term': t,
-                    'resumeWeight': round(l2_r, 4),
-                    'jobWeight': round(l2_j, 4),
-                    'isSkill': False
-                })
-        term_weights.sort(key=lambda x: (x['resumeWeight'] + x['jobWeight']), reverse=True)
-        return rounded_score, term_weights[:20]
-
+@lru_cache(maxsize=1)
 def load_skills_dictionary() -> Dict[str, List[Dict[str, Any]]]:
-    """Loads the maintainable skills dictionary from JSON file."""
-    if os.path.exists(DICT_PATH):
-        try:
-            with open(DICT_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Warning: could not read {DICT_PATH}: {e}")
-            
-    # Fallback default dictionary
+    """Load the maintainable keyword vocabulary from JSON."""
+    if not os.path.exists(DICT_PATH):
+        return {}
+
+    try:
+        with open(DICT_PATH, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    return data if isinstance(data, dict) else {}
+
+
+def _iter_skill_entries() -> Iterable[Tuple[str, str, List[str]]]:
+    """Yield unique ``(name, category, aliases)`` entries from the dictionary."""
+    seen = set()
+    for category, entries in load_skills_dictionary().items():
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            name = str(entry.get("name", "")).strip()
+            if not name:
+                continue
+            key = name.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            aliases = [
+                str(alias).strip()
+                for alias in entry.get("aliases", [])
+                if str(alias).strip()
+            ]
+            yield name, str(category), aliases
+
+
+def _normalised_terms(name: str, aliases: List[str]) -> List[str]:
+    """Normalise a keyword and its aliases, removing duplicates."""
+    terms: List[str] = []
+    for value in [name, *aliases]:
+        normalised = clean_text(value)
+        if normalised and normalised not in terms:
+            terms.append(normalised)
+    return terms
+
+
+def _count_occurrences(clean_document: str, terms: List[str]) -> int:
+    """Count whole-term occurrences without matching longer words.
+
+    Lookarounds instead of ``\\b`` keep punctuation-bearing skills working:
+    ``c++`` must match ``c++`` but not ``c``; ``java`` must not match
+    ``javascript``; ``.net`` must not match inside ``asp.net``. Dots and
+    hyphens on the left also stop the short alias ``js`` from matching inside
+    ``Node.js`` or ``Express.js``.
+
+    Overlapping matches between a keyword and its longer alias (``express``
+    inside ``express.js``) count once, so a single mention is never doubled.
+    """
+    spans: List[Tuple[int, int]] = []
+    for term in terms:
+        pattern = re.compile(
+            r"(?<![a-z0-9._-])" + re.escape(term) + r"(?![a-z0-9_])"
+        )
+        spans.extend((match.start(), match.end()) for match in pattern.finditer(clean_document))
+
+    spans.sort()
+    total = 0
+    covered_until = -1
+    for start, end in spans:
+        if start >= covered_until:
+            total += 1
+        covered_until = max(covered_until, end)
+    return total
+
+
+def _keyword_record(
+    name: str,
+    category: str,
+    job_frequency: int,
+    resume_frequency: int,
+) -> Dict[str, Any]:
     return {
-        "Programming Languages": [
-            {"name": "Python", "aliases": ["python3", "py"]},
-            {"name": "JavaScript", "aliases": ["js"]},
-            {"name": "TypeScript", "aliases": ["ts"]},
-            {"name": "Java", "aliases": ["jdk"]},
-            {"name": "C++", "aliases": ["cpp"]},
-            {"name": "SQL", "aliases": ["structured query language"]}
-        ],
-        "Databases & Storage": [
-            {"name": "PostgreSQL", "aliases": ["postgres"]},
-            {"name": "MySQL", "aliases": []},
-            {"name": "MongoDB", "aliases": ["mongo"]},
-            {"name": "Redis", "aliases": ["caching"]}
-        ],
-        "Web Development": [
-            {"name": "React", "aliases": ["reactjs"]},
-            {"name": "Node.js", "aliases": ["nodejs"]},
-            {"name": "Express.js", "aliases": ["express"]},
-            {"name": "REST APIs", "aliases": ["restful"]}
-        ],
-        "Project Management": [
-            {"name": "Agile", "aliases": ["scrum"]},
-            {"name": "Jira", "aliases": []},
-            {"name": "Sprint Planning", "aliases": []}
-        ],
-        "Marketing & Analytics": [
-            {"name": "SEO", "aliases": ["search engine optimization"]},
-            {"name": "Google Analytics", "aliases": ["ga4"]},
-            {"name": "Content Strategy", "aliases": []}
-        ],
-        "Communication & Interpersonal": [
-            {"name": "Written Communication", "aliases": ["documentation"]},
-            {"name": "Cross-Functional Collaboration", "aliases": ["teamwork"]},
-            {"name": "Problem Solving", "aliases": ["troubleshooting"]}
-        ],
-        "Cloud & DevOps": [
-            {"name": "AWS", "aliases": ["ec2", "s3"]},
-            {"name": "Docker", "aliases": ["containers"]},
-            {"name": "CI/CD", "aliases": ["github actions"]}
-        ]
+        "keyword": name,
+        "category": category,
+        "job_frequency": job_frequency,
+        "resume_frequency": resume_frequency,
     }
 
 
-def extract_skills_analysis(resume_text: str, jd_text: str) -> Dict[str, Any]:
+def analyze_keywords(resume_text: str, job_description: str) -> Dict[str, Any]:
+    """Identify job keywords and compare them with the resume.
+
+    Only terms from the maintained skills dictionary are treated as keywords,
+    which prevents ordinary job-posting words from inflating coverage.
     """
-    Detects required skills from Job Description and compares with Resume text.
-    Uses maintainable JSON dictionary covering programming, databases, web dev,
-    marketing, communication, and project management.
-    """
-    clean_res = f" {clean_text(resume_text)} "
-    clean_jd = f" {clean_text(jd_text)} "
-    
-    skills_taxonomy = load_skills_dictionary()
-    matched_skills = []
-    missing_skills = []
-    category_gaps = []
-    
-    for category, skill_list in skills_taxonomy.items():
-        cat_matched = []
-        cat_missing = []
-        
-        for item in skill_list:
-            skill_name = item['name']
-            aliases = item.get('aliases', [])
-            all_search = [skill_name] + aliases
-            
-            # Count frequency in JD
-            jd_matches = 0
-            for term in all_search:
-                escaped = re.escape(term.lower())
-                found_jd = re.findall(rf'\b{escaped}\b', clean_jd)
-                jd_matches += len(found_jd)
-                
-            if jd_matches > 0:
-                # Check resume
-                res_matches = 0
-                for term in all_search:
-                    escaped = re.escape(term.lower())
-                    found_res = re.findall(rf'\b{escaped}\b', clean_res)
-                    res_matches += len(found_res)
-                    
-                found = res_matches > 0
-                skill_obj = {
-                    'name': skill_name,
-                    'category': category,
-                    'importance': 'Required' if jd_matches > 1 else 'Preferred',
-                    'frequencyInJD': jd_matches,
-                    'foundInResume': found
-                }
-                
-                if found:
-                    matched_skills.append(skill_obj)
-                    cat_matched.append(skill_name)
-                else:
-                    missing_skills.append(skill_obj)
-                    cat_missing.append(skill_name)
-                    
-        total_cat = len(cat_matched) + len(cat_missing)
-        if total_cat > 0:
-            category_gaps.append({
-                'category': category,
-                'totalRequired': total_cat,
-                'matchedCount': len(cat_matched),
-                'missingCount': len(cat_missing),
-                'matchPercentage': round((len(cat_matched) / total_cat) * 100),
-                'matchedSkills': cat_matched,
-                'missingSkills': cat_missing
-            })
-            
-    total_skills = len(matched_skills) + len(missing_skills)
-    skill_score = round((len(matched_skills) / total_skills) * 100) if total_skills > 0 else 75
-    
-    return {
-        'matched_skills': matched_skills,
-        'missing_skills': missing_skills,
-        'category_gaps': category_gaps,
-        'skill_match_score': skill_score
-    }
+    resume_clean = clean_text(resume_text)
+    job_clean = clean_text(job_description)
 
-def evaluate_ats_structure(resume_text: str) -> float:
-    """Evaluates ATS parsing readability based on section headers and layout cues."""
-    score = 50.0
-    text_lower = resume_text.lower()
-    
-    if 'experience' in text_lower or 'work history' in text_lower:
-        score += 15
-    if 'education' in text_lower or 'degree' in text_lower:
-        score += 15
-    if 'skills' in text_lower or 'technologies' in text_lower:
-        score += 15
-        
-    if '@' in text_lower and ('.com' in text_lower or '.edu' in text_lower):
-        score += 5
-        
-    return min(100.0, max(40.0, score))
+    job_keywords: List[Dict[str, Any]] = []
+    resume_keywords: List[Dict[str, Any]] = []
 
-def generate_recommendations(missing_skills: List[Dict[str, Any]], cosine_sim: float, ats_score: float) -> List[Dict[str, Any]]:
-    """Generates explainable, prioritized recommendations for the candidate."""
-    recs = []
-    
-    high_priority = [s['name'] for s in missing_skills if s.get('importance') == 'Required'][:3]
-    if high_priority:
-        recs.append({
-            'id': 'rec-1',
-            'type': 'critical',
-            'title': f"Incorporate Key Missing Skills: {', '.join(high_priority)}",
-            'description': f"The job description highlights {', '.join(high_priority)}. Adding these terms directly enhances automated ATS search matching.",
-            'suggestedAction': "Highlight academic, internship, or project applications of these technologies in your experience bullets.",
-            'targetSection': 'Skills'
-        })
-        
-    if cosine_sim < 65:
-        recs.append({
-            'id': 'rec-2',
-            'type': 'improvement',
-            'title': "Mirror Position Action Verbs & Terminology",
-            'description': "Your overall TF-IDF cosine similarity shows divergence in phrasing. Aligning verbs with the job requisition improves semantic overlap.",
-            'suggestedAction': "Adopt exact phrasing directly from the responsibilities section in your work bullets.",
-            'targetSection': 'Experience'
-        })
-    else:
-        recs.append({
-            'id': 'rec-3',
-            'type': 'strength',
-            'title': "Strong Natural Language & Vocabulary Alignment",
-            'description': f"Your resume has {cosine_sim}% cosine similarity with the role requisitions.",
-            'suggestedAction': "Keep current bullet phrasing; focus on quantifying achievements with measurable metrics.",
-            'targetSection': 'Summary'
-        })
-        
-    if ats_score < 80:
-        recs.append({
-            'id': 'rec-4',
-            'type': 'improvement',
-            'title': "Standardize Header Sections for ATS Crawlers",
-            'description': "Ensure standard section titles (Work Experience, Education, Technical Skills) for reliable parsing.",
-            'suggestedAction': "Use simple text layout without columns or tables inside image frames.",
-            'targetSection': 'Education'
-        })
-        
-    return recs
+    for name, category, aliases in _iter_skill_entries():
+        terms = _normalised_terms(name, aliases)
+        if not terms:
+            continue
 
-def analyze_full(resume_text: str, jd_text: str, resume_title: str = "Resume", job_title: str = "Job") -> Dict[str, Any]:
-    """End-to-end NLP analysis orchestrator."""
-    cosine_sim, term_weights = calculate_tfidf_similarity(resume_text, jd_text)
-    skills_data = extract_skills_analysis(resume_text, jd_text)
-    
-    missing_skill_names = [s['name'] for s in skills_data['missing_skills']]
-    ats_report = evaluate_ats_compatibility(resume_text, jd_text, missing_skill_names)
-    ats_score = ats_report['atsScore']
-    
-    word_count_resume = len(resume_text.strip().split())
-    word_count_jd = len(jd_text.strip().split())
-    
-    skill_score = skills_data['skill_match_score']
-    density_score = min(100, round((len(skills_data['matched_skills']) + 5) * 5.5))
-    
-    # Weighted composite score: 40% Cosine Sim + 35% Skill Match + 15% Keyword Density + 10% ATS
-    overall_score = round(
-        (cosine_sim * 0.40) + 
-        (skill_score * 0.35) + 
-        (density_score * 0.15) + 
-        (ats_score * 0.10)
+        job_frequency = _count_occurrences(job_clean, terms)
+        resume_frequency = _count_occurrences(resume_clean, terms)
+
+        record = _keyword_record(
+            name=name,
+            category=category,
+            job_frequency=job_frequency,
+            resume_frequency=resume_frequency,
+        )
+
+        if resume_frequency > 0:
+            resume_keywords.append(record)
+
+        if job_frequency > 0:
+            job_keywords.append(record)
+
+    matched_keywords = [
+        item for item in job_keywords if item["resume_frequency"] > 0
+    ]
+    missing_keywords = [
+        item for item in job_keywords if item["resume_frequency"] == 0
+    ]
+
+    # Most frequently requested keywords are the most useful to show first.
+    matched_keywords.sort(key=lambda item: (-item["job_frequency"], item["keyword"]))
+    missing_keywords.sort(key=lambda item: (-item["job_frequency"], item["keyword"]))
+    resume_keywords.sort(key=lambda item: (-item["resume_frequency"], item["keyword"]))
+
+    job_keyword_count = len(job_keywords)
+    matched_count = len(matched_keywords)
+    keyword_coverage = (
+        round((matched_count / job_keyword_count) * 100.0, 1)
+        if job_keyword_count > 0
+        else 0.0
     )
-    
-    recs = generate_recommendations(skills_data['missing_skills'], cosine_sim, ats_score)
-    
+
     return {
-        'resume_title': resume_title,
-        'job_title': job_title,
-        'cosine_similarity': cosine_sim,
-        'skill_match_score': skill_score,
-        'keyword_density_score': density_score,
-        'ats_readability_score': ats_score,
-        'overall_score': overall_score,
-        'word_count_resume': word_count_resume,
-        'word_count_jd': word_count_jd,
-        'matched_skills': skills_data['matched_skills'],
-        'missing_skills': skills_data['missing_skills'],
-        'category_gaps': skills_data['category_gaps'],
-        'top_term_weights': term_weights,
-        'recommendations': recs,
-        'ats_compatibility_report': ats_report,
-        'resume_text': resume_text,
-        'job_description_text': jd_text,
-        'score_explanation': {
-            'disclaimer': 'The similarity score measures textual relevance and vocabulary overlap, not the probability of getting hired.',
-            'formula': 'Overall Score = (Cosine Similarity × 0.40) + (Skill Match × 0.35) + (Keyword Density × 0.15) + (ATS Structure × 0.10)',
-            'cosine_method': 'scikit-learn TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True, norm=l2) and pairwise cosine_similarity.'
-        }
+        "matched_keywords": matched_keywords,
+        "missing_keywords": missing_keywords,
+        "resume_keywords": resume_keywords,
+        "job_keyword_count": job_keyword_count,
+        "matched_keyword_count": matched_count,
+        "keyword_coverage": keyword_coverage,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Rule-based suggestions
+# ---------------------------------------------------------------------------
+
+def generate_suggestions(
+    matched_keywords: List[Dict[str, Any]],
+    missing_keywords: List[Dict[str, Any]],
+    job_keyword_count: int,
+    keyword_coverage: float,
+    resume_keyword_count: int,
+    resume_word_count: int,
+) -> List[Dict[str, str]]:
+    """Build practical suggestions from the actual analysis results.
+
+    Suggestions never invent experience, qualifications, or skills. Missing
+    keywords are phrased conditionally ("if you have used ...").
+    """
+    suggestions: List[Dict[str, str]] = []
+
+    if job_keyword_count == 0:
+        suggestions.append({
+            "id": "no-job-keywords",
+            "title": "No known keywords found in the job description",
+            "description": (
+                "The posting does not contain any terms from the current skills "
+                "dictionary, so keyword coverage cannot be measured for this run."
+            ),
+            "action": (
+                "Paste the complete job description, including required tools and "
+                "skills. This is not a problem with your resume."
+            ),
+        })
+
+    if missing_keywords:
+        missing_names = [item["keyword"] for item in missing_keywords[:5]]
+        readable_names = ", ".join(missing_names)
+        suggestions.append({
+            "id": "review-missing-keywords",
+            "title": f"Review {len(missing_keywords)} job keyword"
+                     + ("s" if len(missing_keywords) != 1 else "")
+                     + " not found in your resume",
+            "description": f"The job description mentions {readable_names}, but these terms were not detected in your resume.",
+            "action": (
+                f"If you have genuine experience with {readable_names}, add it to your "
+                "skills, projects, or work history using the same wording. Only include "
+                "skills you actually have."
+            ),
+        })
+
+    if matched_keywords:
+        matched_names = [item["keyword"] for item in matched_keywords[:5]]
+        suggestions.append({
+            "id": "highlight-matched-keywords",
+            "title": "Make your existing matching skills easy to find",
+            "description": f"Your resume already contains {', '.join(matched_names)}.",
+            "action": (
+                "Keep these keywords in a clearly labelled Skills section and support "
+                "them with real project, coursework, or work examples."
+            ),
+        })
+
+    if resume_word_count < 150 or resume_keyword_count < 4:
+        suggestions.append({
+            "id": "add-relevant-detail",
+            "title": "Add relevant detail where it is missing",
+            "description": (
+                "The resume contains limited relevant content for this comparison, "
+                "which reduces both text similarity and keyword coverage."
+            ),
+            "action": (
+                "Add projects, coursework, tools, or responsibilities that you genuinely "
+                "have. Do not add experience, certifications, or skills you do not possess."
+            ),
+        })
+
+    if job_keyword_count > 0 and keyword_coverage < 60:
+        suggestions.append({
+            "id": "align-wording",
+            "title": "Use the job posting's wording where it is accurate",
+            "description": (
+                f"Your resume matches {keyword_coverage}% of the identified job keywords. "
+                "Different wording can lower both coverage and text similarity."
+            ),
+            "action": (
+                "Where your real experience matches a requirement, describe it with the "
+                "same terminology as the posting rather than a vague synonym."
+            ),
+        })
+    elif job_keyword_count > 0 and keyword_coverage >= 80:
+        suggestions.append({
+            "id": "strong-keyword-coverage",
+            "title": "Keyword coverage is strong",
+            "description": (
+                f"Your resume includes {len(matched_keywords)} of {job_keyword_count} "
+                "identified job keywords."
+            ),
+            "action": (
+                "Keep the content accurate and make sure every keyword is supported by a "
+                "concrete example of what you actually did."
+            ),
+        })
+
+    suggestions.append({
+        "id": "review-against-requirements",
+        "title": "Review the resume against the job requirements",
+        "description": (
+            "Text similarity and keyword coverage cannot judge the quality, seniority, "
+            "or truthfulness of your experience."
+        ),
+        "action": (
+            "Read the posting again and check that your resume gives honest evidence for "
+            "the most important requirements, not just the right keywords."
+        ),
+    })
+
+    return suggestions[:5]
+
+
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
+
+def analyze_full(
+    resume_text: str,
+    job_description: str,
+    resume_title: str = "Uploaded resume",
+    job_title: str = "Target role",
+) -> Dict[str, Any]:
+    """Run the complete, deterministic resume/job comparison."""
+    match_percentage = calculate_tfidf_similarity(resume_text, job_description)
+    keyword_analysis = analyze_keywords(resume_text, job_description)
+
+    resume_word_count = len(resume_text.split())
+    job_description_word_count = len(job_description.split())
+
+    suggestions = generate_suggestions(
+        matched_keywords=keyword_analysis["matched_keywords"],
+        missing_keywords=keyword_analysis["missing_keywords"],
+        job_keyword_count=keyword_analysis["job_keyword_count"],
+        keyword_coverage=keyword_analysis["keyword_coverage"],
+        resume_keyword_count=len(keyword_analysis["resume_keywords"]),
+        resume_word_count=resume_word_count,
+    )
+
+    return {
+        "resume_title": resume_title,
+        "job_title": job_title,
+        "match_percentage": match_percentage,
+        "keyword_coverage": keyword_analysis["keyword_coverage"],
+        "job_keyword_count": keyword_analysis["job_keyword_count"],
+        "matched_keyword_count": keyword_analysis["matched_keyword_count"],
+        "matched_keywords": keyword_analysis["matched_keywords"],
+        "missing_keywords": keyword_analysis["missing_keywords"],
+        "resume_keywords": keyword_analysis["resume_keywords"],
+        "resume_word_count": resume_word_count,
+        "job_description_word_count": job_description_word_count,
+        "suggestions": suggestions,
+        "disclaimer": (
+            "The match percentage is a TF-IDF cosine similarity between the two texts. "
+            "Keyword coverage is the share of dictionary keywords from the job description "
+            "that also appear in the resume. Neither value is a hiring probability or an "
+            "official Applicant Tracking System (ATS) score."
+        ),
     }

@@ -1,18 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  LayoutDashboard,
+  Home,
   FileSearch,
   CheckCircle2,
-  Target,
-  ShieldCheck,
-  ShieldAlert,
-  History,
-  TrendingUp,
   Terminal,
-  Sparkles,
-  BookOpen,
   GraduationCap,
-  Settings,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { ActiveTab } from '../../types';
@@ -21,7 +14,6 @@ import { cn } from '../../lib/ui';
 interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
-  savedCount: number;
   hasResults: boolean;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
@@ -30,31 +22,24 @@ interface SidebarProps {
 interface NavItem {
   id: ActiveTab;
   label: string;
-  icon: typeof LayoutDashboard;
-  count?: number;
+  icon: typeof Home;
+  showWhen?: boolean;
 }
 
-const PRIMARY: Array<Omit<NavItem, 'count'> & { showWhen?: boolean }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+const PRIMARY: NavItem[] = [
+  { id: 'home', label: 'Home', icon: Home },
   { id: 'analyze', label: 'Analyze resume', icon: FileSearch },
   { id: 'results', label: 'Latest results', icon: CheckCircle2, showWhen: true },
-  { id: 'history', label: 'Analysis history', icon: History },
-  { id: 'progress', label: 'Progress', icon: TrendingUp },
 ];
 
 const MORE: NavItem[] = [
-  { id: 'ats-checker', label: 'ATS check', icon: ShieldCheck },
-  { id: 'skills', label: 'Skill gaps', icon: Target },
-  { id: 'dictionary', label: 'Skills list', icon: BookOpen },
-  { id: 'security', label: 'Resume security', icon: ShieldAlert },
-  { id: 'backend-guide', label: 'How it works', icon: Terminal },
+  { id: 'how-it-works', label: 'How it works', icon: Terminal },
   { id: 'about', label: 'About', icon: GraduationCap },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
-  savedCount,
   hasResults,
   isOpenMobile,
   onCloseMobile,
@@ -66,8 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (isOpenMobile) onCloseMobile();
   };
 
-  // While the mobile drawer is open: lock page scroll, move focus inside it,
-  // trap Tab, and support Escape to close.
+  // Mobile drawer: lock scroll, move focus inside, trap Tab and close on Escape.
   useEffect(() => {
     if (!isOpenMobile) return;
     const node = asideRef.current;
@@ -131,18 +115,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{item.label}</span>
           </span>
-          {item.id === 'history' && savedCount > 0 && (
-            <span
-              className={cn(
-                'shrink-0 rounded-md border px-1.5 py-0.5 font-mono text-[10px] tabular-nums',
-                isActive
-                  ? 'border-mint/30 bg-mint/10 text-mint'
-                  : 'border-white/10 bg-white/5 text-silver'
-              )}
-            >
-              {savedCount}
-            </span>
-          )}
         </button>
       </li>
     );
@@ -193,25 +165,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          <p className="px-3 pb-1.5 pt-2 text-xs font-semibold text-silver">
-            Main
-          </p>
+          <p className="px-3 pb-1.5 pt-2 text-xs font-semibold text-silver">Main</p>
           <ul className="space-y-0.5">
             {PRIMARY.filter(item => !item.showWhen || hasResults).map(item => renderItem(item))}
           </ul>
 
-          <p className="px-3 pb-1.5 pt-6 text-xs font-semibold text-silver">
-            More tools
-          </p>
+          <p className="px-3 pb-1.5 pt-6 text-xs font-semibold text-silver">Project</p>
           <ul className="space-y-0.5">{MORE.map(item => renderItem(item, true))}</ul>
         </nav>
 
-        <div className="border-t border-white/[0.08] p-3">
-          <ul>
-            {renderItem({ id: 'settings', label: 'Settings', icon: Settings }, true)}
-          </ul>
-          <p className="px-3 pt-2 text-[11px] leading-relaxed text-silver/80">
-            Your files and results stay in this browser.
+        <div className="border-t border-white/[0.08] p-4">
+          <p className="text-[11px] leading-relaxed text-silver/80">
+            No account and no saved history. Documents are processed by the local Flask API for
+            this analysis only.
           </p>
         </div>
       </aside>

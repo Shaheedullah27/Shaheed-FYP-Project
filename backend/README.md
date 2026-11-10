@@ -1,217 +1,93 @@
-# AI ResumeMatch — Python Flask Backend
+# AI ResumeMatch — Flask Backend
 
-**AI ResumeMatch** is a resume and job-description analyzer. It helps job seekers compare a resume with a target role, see matching and missing skills, review ATS readability signals, and get suggestions for improving the resume. Its scores are guidance only: they are not a hiring prediction or an actual score from an employer's ATS.
+Flask API for the simplified ResumeMatch final-year project. It extracts text from PDF/DOCX resumes and compares that text with a job description using scikit-learn TF-IDF cosine similarity, dictionary keyword matching and rule-based suggestions.
 
-This project has a React/Vite frontend and a Flask API backend. Open the frontend in a browser; the backend provides analysis, document parsing, and saved history.
+No database, authentication, Gemini/other AI API, report export or security inspection is present. See the [root README](../README.md) for full project setup and the calculation details.
 
-## 📌 Architecture Overview
-- **Frontend**: React, TypeScript, and Vite
-- **Framework**: Python Flask + Flask-CORS
-- **NLP & Similarity Engine**: scikit-learn (`TfidfVectorizer`, `cosine_similarity`), NumPy
-- **Document Parsing**: PyMuPDF (`fitz`) for PDF, `python-docx` for Word documents, and text parsing for TXT/RTF/MD
-- **Database**: SQLite3 (`resumematch.db`), initialized and upgraded automatically when the API starts
-- **Optional — AI Insights**: Google `google-genai` SDK. Contextual Gemini commentary (experience alignment, strengths, gaps, prioritized improvements, ATS keywords grounded in the posting, bullet-point tweaks) appended to the local analysis. Explicit per-run user consent is required in the UI; failures degrade to local-only results.
-- **Explainability**: Deterministic mathematical cosine similarity, sublinear term frequencies, n-gram extraction (unigrams + bigrams), and category-level skill gap classification.
+## Modules
 
----
+| File | Responsibility |
+| :-- | :-- |
+| `app.py` | Flask routes, input validation, JSON responses, 10 MB limit |
+| `parser.py` | PDF extraction (PyMuPDF) and DOCX extraction (python-docx) |
+| `nlp_engine.py` | TF-IDF/cosine similarity, keyword coverage, suggestions |
+| `skills_dictionary.json` | Maintainable keyword vocabulary with aliases |
+| `tests/test_resumematch.py` | Extraction, NLP, validation and API tests |
 
-## 🚀 Setup & Local Execution
-
-### Prerequisites
-- Python 3.9–3.12. The pinned scikit-learn and NumPy versions are not compatible with Python 3.14.
-- Node.js and npm.
-
-### Install dependencies
-
-Run these commands from the project root (`My-FYP-Project`). The Windows commands create the backend virtual environment in `backend\venv`.
-
-**Windows PowerShell:**
-```bash
-py -3.12 -m venv .\backend\venv
-.\backend\venv\Scripts\Activate.ps1
-python -m pip install -r .\backend\requirements.txt
-npm install
-```
-
-If PowerShell blocks activation, allow it for the current terminal and activate again:
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\backend\venv\Scripts\Activate.ps1
-```
-
-**Linux/macOS:**
-```bash
-python3.12 -m venv backend/venv
-source backend/venv/bin/activate
-python -m pip install -r backend/requirements.txt
-npm install
-```
-
-### Run the project
-
-Start the backend and frontend in **two separate terminals**, from the project root.
-
-**Terminal 1 — Flask backend (Windows PowerShell):**
-```bash
-Set-Location .\backend
-.\venv\Scripts\Activate.ps1
-python app.py
-```
-
-**Terminal 2 — React frontend:**
-```bash
-npm run dev
-```
-
-Open **http://localhost:3000** in your browser. The Flask API runs at **http://localhost:5000**; its health endpoint is **http://localhost:5000/api/health**. Keep both terminals open while using the app.
-
-To run the backend without activating the environment:
-```powershell
-.\backend\venv\Scripts\python.exe .\backend\app.py
-```
-
-### Configure the Gemini API key (optional AI insights)
-
-The AI insights feature is optional: without a key, the app still runs the full local analysis and the results page shows an explicit "AI insights unavailable" notice. The API key is read server-side only from the backend environment variable `GEMINI_API_KEY`. It must never be placed in source code, the React frontend, or Git.
-
-**Locally:**
-
-1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey) (keys start with `AIza...`).
-2. Create `backend\.env` (it is already covered by `.gitignore`):
-
-```env
-GEMINI_API_KEY=AIza...your-key...
-# Optional: override the model used for insights
-GEMINI_MODEL=gemini-3.5-flash-lite
-```
-
-3. Restart `python app.py`. `GET /api/health` then reports `"ai_insights": "configured"`.
-
-`GEMINI_MODEL` is optional and defaults to **`gemini-3.5-flash-lite`** (fast, cost-efficient, stable). Supported alternatives at the time of writing include `gemini-3.8-flash`, `gemini-3.5-flash`, and `gemini-2.5-flash`. Set it once via the environment variable — no model name is hardcoded in the analysis code.
-
-AI insights run **only when the user ticks "Add AI insights (optional)" on the analyze screen**. That prediction sends exactly the resume text and the job description to Google once, never logs either document, never changes the locally computed match score, and the consent is required on every run.
-
-### Deploying with the key on Render
-
-On Render, add environment variables in **Dashboard → Service → Environment** (dashboard values are injected securely; no secret is written to the repository):
-
-| Key | Value | Notes |
-| :-- | :-- | :-- |
-| `GEMINI_API_KEY` | your Gemini API key | Required for AI insights. Optional for the rest of the app. |
-| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Optional. Omit to use the default. |
-| `PORT` | Render's default | The Flask server already binds to `$PORT`. |
-
-The deployed service starts with everything else (analysis, history, security dashboard) fully functional; AI insights simply show "unavailable" until the key is added. Rendering both engines in the same analysis response keeps deployment unchanged in every other respect, and the app picks up the variable on its next restart after the environment is saved.
-
-### Optional: seed sample data
-
-Run from the backend directory with the virtual environment active:
-```bash
-python seed_data.py
-```
-
-### Tests and production build
+## Setup
 
 From the project root:
+
+```bash
+python -m venv backend/venv
+# Windows: backend\venv\Scripts\activate
+# macOS/Linux: source backend/venv/bin/activate
+python -m pip install -r backend/requirements.txt
+python backend/app.py
+```
+
+The API listens on **http://localhost:5000**. Set `PORT` or `FRONTEND_ORIGIN` if needed.
+
+## Endpoints
+
+### `GET /api/health`
+
+Returns service status, version, NLP engine and supported formats.
+
+### `POST /api/extract-resume`
+
+Multipart form data with a `file` field.
+
+- Accepted: `.pdf`, `.docx`
+- Maximum: 10 MB
+- Returns: `filename`, `word_count`, `extracted_text`
+- Rejects invalid, empty, encrypted or unreadable documents with a JSON error.
+
+### `POST /api/analyze`
+
+```json
+{
+  "resume_text": "...",
+  "job_description": "...",
+  "resume_title": "Candidate resume",
+  "job_title": "Target role"
+}
+```
+
+Both texts must contain at least 10 words. The response contains:
+
+- `match_percentage` — cosine similarity × 100;
+- `keyword_coverage` — matched job keywords / total job keywords × 100;
+- `matched_keywords`, `missing_keywords`, `resume_keywords`;
+- `job_keyword_count`, `matched_keyword_count`;
+- word counts;
+- `suggestions` — rule-based, non-generative;
+- `disclaimer`.
+
+## Design decisions
+
+- **Unigram TF-IDF** with English stop words and sublinear term frequency keeps the vector space small and the score explainable.
+- **Whole-keyword lookarounds** prevent `Java` matching `JavaScript` and keep `C++`, `C#` and `.NET` working.
+- **Canonical keyword deduplication** means repeated mentions or multiple aliases count once in coverage.
+- **Zero-division guard** returns `0.0` coverage when the posting has no dictionary keywords.
+- **No storage** — uploads are processed in memory and analysis results are returned without persistence.
+
+## Tests
+
+```bash
+backend/venv/bin/python -m unittest discover -s backend/tests -v
+```
+
+On Windows:
+
 ```powershell
 .\backend\venv\Scripts\python.exe -m unittest discover -s backend\tests -v
-npm run lint
-npm run build
 ```
 
----
+The tests build real PDF and DOCX fixtures in memory, so parser coverage is exercised without committing binary sample files.
 
-## 📡 REST API Documentation
+## Limitations
 
-### 1. `GET /api/health`
-Checks server status and connected NLP/database engines.
-- **Response**:
-```json
-{
-  "status": "healthy",
-  "service": "AI ResumeMatch Flask API",
-  "version": "2.0.0",
-  "database": "SQLite connected",
-  "nlp_engine": "scikit-learn TF-IDF + Cosine Similarity",
-  "supported_formats": [".pdf", ".docx", ".doc", ".txt", ".md", ".rtf"]
-}
-```
-
-The backend exposes API endpoints rather than a web page, so opening `http://localhost:5000/` directly may return 404. Use the frontend at `http://localhost:3000`.
-
-### 2. `POST /api/analyze`
-Executes end-to-end TF-IDF vectorization, cosine similarity computation, skill extraction, ATS readability scoring, and improvement advice.
-- **Request Body**:
-```json
-{
-  "resume_text": "Alex Chen Full Stack Engineer React TypeScript Node...",
-  "job_description": "We are looking for Full Stack Engineer with React...",
-  "resume_title": "Alex Chen Resume",
-  "job_title": "Full Stack Engineer"
-}
-```
-- **Response**:
-```json
-{
-  "id": "analysis-a1b2c3d4",
-  "timestamp": "2026-10-19 12:00",
-  "overall_score": 84,
-  "cosine_similarity": 82.5,
-  "skill_match_score": 88.0,
-  "matched_skills": [...],
-  "missing_skills": [...],
-  "category_gaps": [...],
-  "top_term_weights": [...]
-}
-```
-
-### 3. `POST /api/parse-resume`
-Extracts raw text from uploaded `.pdf`, `.docx`, or `.txt` files using PyMuPDF and python-docx.
-- **Form Data**: `file` (multipart file upload)
-
-### 4. `POST /api/ats-check`
-Performs standalone or job-aligned Applicant Tracking System (ATS) compatibility check.
-- **Request Body**:
-```json
-{
-  "resume_text": "Full text of resume...",
-  "job_description": "Optional target job requisition text...",
-  "missing_skills": ["AWS", "Docker"]
-}
-```
-- **Response**:
-```json
-{
-  "ats_compatibility_report": {
-    "atsScore": 88,
-    "contactDetails": { "emailFound": true, "phoneFound": true, "linkedinFound": true },
-    "sectionsDetected": [...],
-    "checks": [...],
-    "recommendations": [...]
-  }
-}
-```
-
-### 5. `GET /api/history`
-Returns historical comparison records stored in SQLite.
-
-### 6. `GET /api/history/<id>`
-Retrieves a specific stored analysis record.
-
-### 7. `DELETE /api/history/<id>`
-Deletes an analysis record.
-
----
-
-## 🔍 ATS Check Verification Taxonomy & Limitations
-
-| Check Category | Implementation Method | Verification Level | Technical Note |
-| :--- | :--- | :--- | :--- |
-| **Email & Phone Presence** | Regex pattern matching | **Verified** | Deterministic check for email and international/E.164 phone formats. |
-| **LinkedIn / Portfolio URL** | Domain and handle regex | **Verified** | Identifies custom LinkedIn URLs and developer portfolio handles. |
-| **Standard Headings** | Alias dictionary & line length | **Verified** | Recognizes Skills, Experience, Education, Projects, and Certifications. |
-| **Student Work History Tolerance** | Academic/Project presence logic | **Verified** | Does NOT penalize students for lacking work experience if Projects/Education exist. |
-| **Text Stream Fragmentation** | Single-word line ratio heuristic | **Approximate** | Flags potential multi-column reading order corruption. |
-| **Decorative Bullet Glyphs** | UTF-8 non-standard symbol scan | **Verified** | Detects geometric wingdings (❖, ★, ▲) that confuse legacy ATS parsers. |
-| **Visual 2D Text Boxes & Canvas Columns** | Stream parser limitation | **Unverified** | Plain text extraction discards X/Y coordinates; cannot verify visual column bounding boxes without 2D OCR. |
-| **Images Containing Text** | Stream parser limitation | **Unverified** | Flattened raster images cannot be parsed without optical character recognition (OCR). |
+- Image-only/scanned PDFs need OCR, which is out of scope; the API returns a readable error.
+- TF-IDF cannot understand synonyms outside the dictionary or judge experience quality.
+- Keyword coverage is not an official ATS score.

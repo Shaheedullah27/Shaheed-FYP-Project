@@ -10,18 +10,11 @@ interface HeaderProps {
 }
 
 const TAB_TITLES: Record<ActiveTab, string> = {
-  dashboard: 'Dashboard',
+  home: 'Home',
   analyze: 'Analyze resume',
   results: 'Your results',
-  skills: 'Skill gaps',
-  'ats-checker': 'ATS check',
-  security: 'Resume security',
-  dictionary: 'Skills list',
-  history: 'Analysis history',
-  progress: 'Progress',
-  'backend-guide': 'How it works',
+  'how-it-works': 'How it works',
   about: 'About',
-  settings: 'Settings',
 };
 
 export const Header: React.FC<HeaderProps> = ({

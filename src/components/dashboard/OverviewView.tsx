@@ -4,51 +4,65 @@ import {
   Upload,
   Briefcase,
   LineChart,
-  FileText,
   Sparkles,
-  History,
-  Plus,
+  Gauge,
+  CheckCircle2,
+  ShieldCheck,
+  ListChecks,
 } from 'lucide-react';
-import { ActiveTab, HistoryItem } from '../../types';
 import { Button } from '../ui/Button';
-import { prefersReducedMotion, scoreTone, toneText } from '../../lib/ui';
+import { prefersReducedMotion } from '../../lib/ui';
 
 /** 3D hero is split out so the WebGL bundle loads lazily and only on desktop. */
 const HeroStage = lazy(() => import('../three/HeroStage'));
 
 interface OverviewViewProps {
-  onTabChange: (tab: ActiveTab) => void;
-  onSelectSampleAndAnalyze: (resumeId: string, jdId: string) => void;
-  history: HistoryItem[];
-  onViewAnalysis: (analysisId: string) => void;
+  onStartAnalysis: () => void;
 }
 
 const STEPS = [
   {
     icon: Upload,
     title: 'Upload your resume',
-    description: 'Add a PDF, Word document, or paste the text.',
+    description: 'Choose a PDF or DOCX. The backend extracts the readable text.',
   },
   {
     icon: Briefcase,
     title: 'Add the job description',
-    description: 'Paste the posting for the role you want.',
+    description: 'Paste the posting for the role you want to compare against.',
   },
   {
     icon: LineChart,
     title: 'Review your results',
-    description: 'See what matches, what is missing, and what to fix.',
+    description: 'See the text match, keyword coverage, missing terms and suggestions.',
   },
 ];
 
-export const OverviewView: React.FC<OverviewViewProps> = ({
-  onTabChange,
-  onSelectSampleAndAnalyze,
-  history,
-  onViewAnalysis,
-}) => {
-  // Never download the WebGL bundle on small screens — the 3D scene is
-  // decoration only, so mobile gets the plain surface instead.
+const OUTPUTS = [
+  {
+    icon: Gauge,
+    title: 'Match percentage',
+    description: 'TF-IDF cosine similarity between your resume and the job description.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Matched keywords',
+    description: 'Skills and terms that appear in both documents.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Keyword coverage',
+    description: 'A basic ATS-style check of dictionary keywords, with matched and missing lists.',
+  },
+  {
+    icon: ListChecks,
+    title: 'Improvement suggestions',
+    description: 'Rule-based next steps derived from the actual analysis, never invented experience.',
+  },
+];
+
+export const OverviewView: React.FC<OverviewViewProps> = ({ onStartAnalysis }) => {
+  // Never download the WebGL bundle on small screens — the scene is decoration.
   const [showHero, setShowHero] = useState(false);
   const [heroReady, setHeroReady] = useState(false);
 
@@ -60,8 +74,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     return () => query.removeEventListener('change', update);
   }, []);
 
-  // Load the 3D chunk only after the page is idle, and skip it entirely when
-  // the user asked for reduced motion.
+  // Load the 3D chunk after the page is idle, and skip it for reduced motion.
   useEffect(() => {
     if (!showHero || prefersReducedMotion()) return;
 
@@ -80,51 +93,44 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     return () => window.clearTimeout(timer);
   }, [showHero]);
 
-  const recent = history.slice(0, 3);
-  const total = history.length;
-  const averageScore =
-    total > 0 ? Math.round(history.reduce((sum, item) => sum + item.overallScore, 0) / total) : null;
-  const bestScore = total > 0 ? Math.max(...history.map(item => item.overallScore)) : null;
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       {/* Welcome + single primary action */}
       <section className="panel emerald-veil overflow-hidden">
         <div className="grid items-stretch gap-0 lg:grid-cols-[1.35fr_1fr]">
           <div className="p-6 sm:p-8">
-            <h2 className="font-heading text-[22px] font-semibold tracking-tight text-porcelain sm:text-[26px]">
-              Ready to improve your resume?
+            <span className="tag tag-mint">NLP resume and job matching</span>
+            <h2 className="mt-3 font-heading text-[22px] font-semibold tracking-tight text-porcelain sm:text-[26px]">
+              How well does your resume match the job?
             </h2>
             <p className="mt-2 max-w-lg text-sm leading-relaxed text-silver">
-              Compare your resume with a job description to see how well they match, which skills
-              are missing, and what to change next.
+              Upload your resume, paste a job description, and get an explainable comparison:
+              TF-IDF text similarity, matched and missing keywords, basic keyword coverage, and
+              practical suggestions.
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 variant="primary"
                 size="lg"
-                onClick={() => onTabChange('analyze')}
+                onClick={onStartAnalysis}
                 leftIcon={<Sparkles className="h-4 w-4" strokeWidth={2.4} />}
                 rightIcon={<ArrowRight className="h-4 w-4" />}
               >
                 Analyze My Resume
               </Button>
-              <button
-                type="button"
-                onClick={() => onSelectSampleAndAnalyze('resume-fullstack', 'jd-fullstack')}
-                className="text-sm font-medium text-silver underline-offset-4 transition-colors hover:text-porcelain hover:underline"
-              >
-                Or try an example comparison
-              </button>
             </div>
 
             <p className="mt-4 text-xs text-silver">
-              Takes about a minute. Your files stay in this browser.
+              No sign-in, no saved history. Your documents are sent to the local Flask API for this
+              analysis only.
             </p>
           </div>
 
-          <div className="relative hidden min-h-[220px] overflow-hidden border-l border-white/[0.06] lg:block" aria-hidden="true">
+          <div
+            className="relative hidden min-h-[220px] overflow-hidden border-l border-white/[0.06] lg:block"
+            aria-hidden="true"
+          >
             <div
               className="absolute inset-0"
               style={{
@@ -162,9 +168,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-silver">
-                    Step {index + 1}
-                  </p>
+                  <p className="text-xs font-semibold text-silver">Step {index + 1}</p>
                   <h3 className="mt-0.5 text-sm font-semibold text-porcelain">{step.title}</h3>
                   <p className="mt-1 text-xs leading-relaxed text-silver">{step.description}</p>
                 </div>
@@ -174,101 +178,39 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </ol>
       </section>
 
-      {/* Recent analyses */}
-      <section aria-labelledby="recent-heading" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div>
-            <h2 id="recent-heading" className="text-sm font-semibold text-porcelain">
-              Recent analyses
-            </h2>
-            {total > 0 && averageScore !== null && bestScore !== null && (
-              <p className="mt-0.5 text-xs text-silver">
-                {total} saved {total === 1 ? 'analysis' : 'analyses'} · average match{' '}
-                {averageScore}% · best {bestScore}%
-              </p>
-            )}
-          </div>
-          {total > 0 && (
-            <button
-              type="button"
-              onClick={() => onTabChange('history')}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-ion transition-colors hover:text-mint"
-            >
-              View all history
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          )}
+      {/* What the result contains */}
+      <section aria-labelledby="outputs-heading" className="space-y-3">
+        <div className="px-1">
+          <h2 id="outputs-heading" className="text-sm font-semibold text-porcelain">
+            What you will see
+          </h2>
+          <p className="mt-0.5 text-xs text-silver">
+            Every value is calculated from the uploaded resume and the job description you paste.
+          </p>
         </div>
-
-        {recent.length === 0 ? (
-          <div className="panel flex flex-col items-center px-6 py-10 text-center">
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-mint/25 bg-mint/10 text-mint">
-              <FileText className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <h3 className="font-heading text-base font-semibold text-porcelain">No analyses yet</h3>
-            <p className="mt-1 max-w-md text-sm leading-relaxed text-silver">
-              Your comparisons will appear here with the job title, date, and match score. Start
-              with your first resume.
-            </p>
-            <Button
-              variant="primary"
-              size="md"
-              className="mt-5"
-              onClick={() => onTabChange('analyze')}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              Analyze My Resume
-            </Button>
-          </div>
-        ) : (
-          <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-xl border border-white/[0.08] bg-graphite">
-            {recent.map(item => {
-              const tone = scoreTone(item.overallScore);
-              return (
-                <li
-                  key={item.id}
-                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-porcelain">{item.jobTitle}</p>
-                    <p className="mt-0.5 truncate text-xs text-silver">
-                      {item.resumeTitle}
-                      {item.companyName ? ` · ${item.companyName}` : ''}
-                    </p>
-                    <p className="mt-1 text-[11px] text-silver">{item.timestamp}</p>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-3">
-                    <div className="text-right">
-                      <span className={`font-mono text-lg font-semibold tabular-nums ${toneText[tone]}`}>
-                        {item.overallScore}%
-                      </span>
-                      <span className="block text-xs text-silver">
-                        match
-                      </span>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onViewAnalysis(item.id)}
-                      rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
-                    >
-                      View results
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {OUTPUTS.map(output => {
+            const Icon = output.icon;
+            return (
+              <article key={output.title} className="panel flex gap-3 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-ion">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-porcelain">{output.title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-silver">{output.description}</p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
-      {recent.length > 0 && (
-        <p className="flex items-center gap-1.5 px-1 text-xs text-silver">
-          <History className="h-3.5 w-3.5" aria-hidden="true" />
-          Showing comparisons saved in this browser only.
-        </p>
-      )}
+      <p className="px-1 pb-2 text-[11px] leading-relaxed text-silver">
+        The match percentage measures text similarity. Keyword coverage measures how many
+        dictionary keywords from the job description appear in the resume. Neither is a hiring
+        prediction or an official ATS score.
+      </p>
     </div>
   );
 };

@@ -10,11 +10,10 @@ import {
   RotateCw,
   ClipboardPaste,
   Info,
-  Bot,
 } from 'lucide-react';
 import { SAMPLE_RESUMES, SAMPLE_JOB_DESCRIPTIONS } from '../../data/sampleData';
 import { ACCEPTED_FILE_TYPES, validateDocumentFile } from '../../services/fileValidation';
-import { deriveJobTitle } from '../../services/progress';
+import { extractResumeText } from '../../services/api';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { Button } from '../ui/Button';
 import { cn, prefersReducedMotion } from '../../lib/ui';
@@ -24,16 +23,12 @@ interface AnalyzeViewProps {
     resumeText: string,
     jdText: string,
     resumeTitle: string,
-    jobTitle: string,
-    /** Explicit consent for sending the resume text and job description to Google Gemini. */
-    useGemini: boolean
+    jobTitle: string
   ) => void;
   isLoading: boolean;
   /** User-facing failure message from the last attempt, if any. */
   error?: string | null;
   onDismissError?: () => void;
-  initialResumeText?: string;
-  initialJdText?: string;
 }
 
 interface SelectedFile {
@@ -42,7 +37,7 @@ interface SelectedFile {
   wordCount: number;
 }
 
-const MIN_WORDS = 15;
+const MIN_WORDS = 10;
 
 const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -50,6 +45,18 @@ const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const firstMeaningfulLine = (text: string) =>
+  text
+    .split('\n')
+    .map(line => line.trim())
+    .find(Boolean) || '';
+
+const deriveJobTitle = (text: string) => {
+  const line = firstMeaningfulLine(text);
+  if (!line) return '';
+  return line.replace(/^job\s*title\s*[:\-–]\s*/i, '').slice(0, 100);
 };
 
 const StepHeading: React.FC<{ step: number; title: string; description: string }> = ({
@@ -73,16 +80,10 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   isLoading,
   error,
   onDismissError,
-  initialResumeText = '',
-  initialJdText = '',
 }) => {
-  const [resumeText, setResumeText] = useState(initialResumeText);
-  const [jobDescriptionText, setJobDescriptionText] = useState(initialJdText);
-  const [resumeTitle, setResumeTitle] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [jobDescriptionText, setJobDescriptionText] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  /** Per-run opt-in. Nothing reaches any external AI service unless this is on. */
-  const [aiConsent, setAiConsent] = useState(false);
-
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isParsingFile, setIsParsingFile] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -106,17 +107,17 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   const disabledReason = isParsingFile
     ? 'Waiting for your file to finish reading…'
     : !resumeText.trim()
-    ? 'Add your resume to continue.'
-    : !resumeReady
-    ? `Add a little more resume text (at least ${MIN_WORDS} words).`
-    : !jobDescriptionText.trim()
-    ? 'Paste the job description to continue.'
-    : !jdReady
-    ? `Add a little more of the job description (at least ${MIN_WORDS} words).`
-    : null;
+      ? 'Add your resume to continue.'
+      : !resumeReady
+        ? `Add a little more resume text (at least ${MIN_WORDS} words).`
+        : !jobDescriptionText.trim()
+          ? 'Paste the job description to continue.'
+          : !jdReady
+            ? `Add a little more of the job description (at least ${MIN_WORDS} words).`
+            : null;
 
   const handleFile = async (file: File) => {
-    // Reset immediately so picking the same file twice still fires onChange.
+    // Reset immediately so choosing the same file twice still fires onChange.
     if (fileInputRef.current) fileInputRef.current.value = '';
     setUploadMessage(null);
     setFieldErrors(prev => ({ ...prev, resume: undefined }));
@@ -130,25 +131,20 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
 
     setIsParsingFile(true);
     try {
-      // Load the PDF/DOCX parsers only when a file is actually chosen.
-      const { parseDocumentFile } = await import('../../services/documentParser');
-      const result = await parseDocumentFile(file);
-
-      if (result.error) {
-        setUploadMessage({ type: 'error', text: result.error });
-      } else if (result.text) {
-        setResumeText(result.text);
-        setResumeTitle(file.name.replace(/\.[^/.]+$/, ''));
-        setSelectedFile({ name: file.name, size: file.size, wordCount: result.wordCount });
-        setUploadMessage({
-          type: 'success',
-          text: `Added “${file.name}” (${result.wordCount} words). You can edit the text below if anything looks wrong.`,
-        });
-      }
-    } catch {
+      const result = await extractResumeText(file);
+      setResumeText(result.text);
+      setSelectedFile({ name: result.filename, size: file.size, wordCount: result.wordCount });
+      setUploadMessage({
+        type: 'success',
+        text: `Added “${result.filename}” (${result.wordCount} words). The text was extracted by the Python backend; you can edit it below if anything looks wrong.`,
+      });
+    } catch (uploadError) {
       setUploadMessage({
         type: 'error',
-        text: 'Something went wrong while reading this file. Please try another document.',
+        text:
+          uploadError instanceof Error
+            ? uploadError.message
+            : 'Could not read this file. Please try another PDF or DOCX document.',
       });
     } finally {
       setIsParsingFile(false);
@@ -174,7 +170,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     const resume = SAMPLE_RESUMES[0];
     const jd = SAMPLE_JOB_DESCRIPTIONS[0];
     setResumeText(resume.text);
-    setResumeTitle(resume.title);
     setJobDescriptionText(jd.text);
     setJobTitle(jd.title);
     setSelectedFile(null);
@@ -204,19 +199,16 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     }
 
     setActionNote(null);
-    const fallbackResumeTitle =
-      resumeText
-        .split('\n')
-        .map(line => line.trim())
-        .find(Boolean)
-        ?.slice(0, 80) || 'My resume';
+
+    const fallbackResumeTitle = selectedFile
+      ? selectedFile.name.replace(/\.[^/.]+$/, '')
+      : firstMeaningfulLine(resumeText).slice(0, 100);
 
     onRunAnalysis(
       resumeText,
       jobDescriptionText,
-      resumeTitle.trim() || fallbackResumeTitle,
-      jobTitle.trim() || deriveJobTitle(jobDescriptionText) || 'Target role',
-      aiConsent
+      fallbackResumeTitle || 'My resume',
+      jobTitle.trim() || deriveJobTitle(jobDescriptionText) || 'Target role'
     );
   };
 
@@ -229,8 +221,8 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     return (
       <div className="mx-auto w-full max-w-3xl py-8">
         <LoadingSpinner
-          message={aiConsent ? 'Analyzing your resume, then generating AI insights…' : 'Analyzing your resume…'}
-          hint={aiConsent ? 'The optional Gemini step can add 10–30 seconds.' : undefined}
+          message="Analyzing your resume…"
+          hint="TF-IDF similarity and keyword coverage are calculated by the Python backend."
         />
       </div>
     );
@@ -244,9 +236,9 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
           Compare your resume with a job
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-silver">
-          Three steps: upload your resume, add the job description, then run the analysis. The core
-          comparison runs in this app. Optional AI insights only run if you explicitly opt in below
-          (step 3); otherwise nothing is sent to any third-party service.
+          Upload a PDF or DOCX resume, paste the job description, then run the comparison. The
+          Python backend extracts the text, calculates TF-IDF cosine similarity, and checks keyword
+          coverage. No account is needed and results are not saved.
         </p>
       </div>
 
@@ -296,7 +288,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
           <StepHeading
             step={1}
             title="Upload your resume"
-            description="Drag and drop your file here, or choose a file from your device."
+            description="Drag and drop a PDF or DOCX, or choose a file from your device. Text extraction runs on the backend."
           />
         </div>
 
@@ -344,7 +336,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
               Choose file
             </Button>
             <p id="resume-file-help" className="mt-3 text-xs text-silver">
-              PDF, DOCX, TXT, MD, or RTF · up to 10 MB
+              PDF or DOCX · up to 10 MB
             </p>
           </div>
         )}
@@ -358,7 +350,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
             <Loader2 className="h-4 w-4 shrink-0 animate-spin text-mint" aria-hidden="true" />
             <div>
               <p className="text-sm font-medium text-porcelain">Reading your document…</p>
-              <p className="text-xs text-silver">This only takes a moment.</p>
+              <p className="text-xs text-silver">The Python backend is extracting the text.</p>
             </div>
           </div>
         )}
@@ -370,7 +362,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-porcelain">{selectedFile.name}</p>
                 <p className="text-xs text-silver">
-                  {formatBytes(selectedFile.size)} · {selectedFile.wordCount} words read
+                  {formatBytes(selectedFile.size)} · {selectedFile.wordCount} words extracted
                 </p>
               </div>
             </div>
@@ -414,7 +406,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
           </div>
         )}
 
-        {/* Resume text — always visible so pasted resumes and fixes are possible */}
+        {/* Resume text — visible so pasted resumes and corrections remain possible. */}
         <div className="mt-5">
           <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
             <label htmlFor="resume-text" className="text-sm font-medium text-porcelain">
@@ -426,7 +418,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
           </div>
           <p id="resume-text-help" className="mb-2 text-xs leading-relaxed text-silver">
             Uploading a file fills this in. You can also paste your resume or correct anything the
-            file reader missed.
+            extractor missed.
           </p>
           <textarea
             id="resume-text"
@@ -447,21 +439,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
               {fieldErrors.resume}
             </p>
           )}
-        </div>
-
-        <div className="mt-3">
-          <label htmlFor="resume-name" className="mb-1.5 block text-xs font-medium text-silver">
-            Name this resume (optional)
-          </label>
-          <input
-            id="resume-name"
-            type="text"
-            value={resumeTitle}
-            onChange={event => setResumeTitle(event.target.value)}
-            placeholder="For example, “Alex Chen — Software Engineer”"
-            className="field"
-          />
-          <p className="mt-1 text-xs text-silver">Used to label this analysis in your history.</p>
         </div>
       </section>
 
@@ -489,7 +466,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
             aria-describedby="job-title-help"
           />
           <p id="job-title-help" className="mt-1 text-xs text-silver">
-            Used to group repeat analyses in Progress. Leave blank to use the title from the posting.
+            Shown on the results page. Leave blank to use the first line of the posting.
           </p>
         </div>
 
@@ -556,50 +533,15 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         <StepHeading
           step={3}
           title="Start the analysis"
-          description="You will get a match score, matched and missing skills, improvement ideas, and an ATS check."
+          description="You will get a text match percentage, matched and missing keywords, basic keyword coverage, and rule-based suggestions."
         />
-
-        {/* Optional AI insights — explicit privacy consent per the project charter */}
-        <div className="mb-5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-          <label
-            htmlFor="ai-consent"
-            className="flex cursor-pointer items-start gap-3"
-          >
-            <input
-              id="ai-consent"
-              type="checkbox"
-              checked={aiConsent}
-              onChange={event => setAiConsent(event.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-ion"
-            />
-            <span className="min-w-0">
-              <span className="flex items-center gap-1.5 text-sm font-semibold text-porcelain">
-                <Bot className="h-4 w-4 shrink-0 text-ion" aria-hidden="true" />
-                Add AI insights (optional)
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-silver">
-                Besides the local score, Google Gemini reviews your resume text and this job
-                description and returns contextual advice: experience alignment, strengths,
-                skill gaps, prioritized improvements, ATS keywords grounded in the posting, and
-                tweaks for existing bullet points. If you decline, only the built-in analysis
-                runs and no data is sent anywhere. If enabled, the result may take an extra
-                10–30 seconds.
-              </span>
-              <span className="mt-1 block text-xs leading-relaxed text-silver">
-                Only these two texts are sent, once per analysis. They are not stored on
-                Google's servers with this request, and the numeric match score is always
-                computed locally.
-              </span>
-            </span>
-          </label>
-        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="order-2 flex items-start gap-2 text-xs leading-relaxed text-silver sm:order-1 sm:max-w-md">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" />
             <span>
-              Scores show how closely the wording and skills align. They are not a hiring
-              probability or an official ATS score.
+              These results describe wording and keyword overlap. They are not a hiring probability
+              or an official ATS score.
             </span>
           </div>
 
@@ -621,7 +563,10 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         </div>
 
         {actionNote && (
-          <p className="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-silver" role="status">
+          <p
+            className="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-silver"
+            role="status"
+          >
             {actionNote}
           </p>
         )}

@@ -1,189 +1,369 @@
-import unittest
+import io
 import os
 import sys
-import json
-import sqlite3
+import unittest
 
-# Ensure backend root is in sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from nlp_engine import clean_text, calculate_tfidf_similarity, extract_skills_analysis, analyze_full
-from ats_checker import evaluate_ats_compatibility
-from database import init_db, save_analysis, get_recent_analyses, get_analysis_by_id, delete_analysis_by_id, DB_FILE
-from report_generator import generate_text_report
+from app import app
+from nlp_engine import (
+    analyze_full,
+    analyze_keywords,
+    calculate_tfidf_similarity,
+    clean_text,
+    generate_suggestions,
+)
+from parser import extract_text_from_docx, extract_text_from_pdf
 
-class TestAIResumeMatch(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        init_db()
+RELEVANT_RESUME = (
+    "Full stack software engineer with hands-on experience building web applications "
+    "using Python, Flask, React, TypeScript, PostgreSQL, Docker, Git, REST APIs and SQL. "
+    "Built and deployed REST APIs with Flask and PostgreSQL, wrote unit tests, and worked "
+    "with React and TypeScript on the frontend."
+)
 
-    def test_text_cleaning(self):
-        raw = "Hello World! @#$ Python3 & REACT.JS -- 2026\n\n\tNew line"
-        cleaned = clean_text(raw)
+RELEVANT_JOB = (
+    "We are hiring a full stack software engineer to build web applications with Python, "
+    "Flask, React, TypeScript, PostgreSQL, Docker, Git, REST APIs and SQL. You will build "
+    "REST APIs, work with React and TypeScript, and maintain PostgreSQL databases."
+)
+
+UNRELATED_RESUME = (
+    "Chef and culinary specialist with ten years of experience in French pastry, baking, "
+    "menu planning, kitchen inventory and restaurant service."
+)
+
+UNRELATED_JOB = (
+    "Senior cloud architect needed for Kubernetes cluster automation, AWS infrastructure, "
+    "Terraform provisioning and Linux operations."
+)
+
+
+def build_docx() -> bytes:
+    from docx import Document
+
+    document = Document()
+    document.add_paragraph("John Doe")
+    document.add_paragraph("Python developer with Flask, SQL and React experience.")
+    document.add_paragraph("Built a resume matching project using scikit-learn.")
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def build_pdf() -> bytes:
+    try:
+        import pymupdf as fitz
+    except ImportError:
+        import fitz
+
+    document = fitz.open()
+    page = document.new_page()
+    page.insert_text((72, 72), "John Doe")
+    page.insert_text((72, 92), "Python developer with Flask, SQL and React experience.")
+    page.insert_text((72, 112), "Built a resume matching project using scikit-learn.")
+    pdf_bytes = document.tobytes()
+    document.close()
+    return pdf_bytes
+
+
+class TextProcessingTests(unittest.TestCase):
+    def test_clean_text_preserves_technical_characters(self):
+        cleaned = clean_text("Hello World! @#$ Python3 & REACT.JS -- C++ C#\n\n\tNew line")
         self.assertIn("hello world", cleaned)
         self.assertIn("python3", cleaned)
         self.assertIn("react.js", cleaned)
+        self.assertIn("c++", cleaned)
+        self.assertIn("c#", cleaned)
         self.assertNotIn("@#$", cleaned)
 
-    def test_tfidf_cosine_similarity_relevant(self):
-        res = "Full stack engineer proficient in Python React PostgreSQL Docker and REST APIs with experience building full stack applications using Python React PostgreSQL Docker and REST APIs."
-        jd = "Looking for a full stack developer skilled in Python React PostgreSQL Docker and REST APIs to build full stack applications using Python React PostgreSQL Docker and REST APIs."
-        score, term_weights = calculate_tfidf_similarity(res, jd)
-        
-        self.assertGreaterEqual(score, 50.0)
-        self.assertLessEqual(score, 100.0)
-        self.assertTrue(len(term_weights) > 0)
-        
-        terms = [t['term'] for t in term_weights]
-        self.assertTrue(any('python' in t or 'react' in t for t in terms))
+    def test_similarity_is_consistent(self):
+        first = calculate_tfidf_similarity(RELEVANT_RESUME, RELEVANT_JOB)
+        second = calculate_tfidf_similarity(RELEVANT_RESUME, RELEVANT_JOB)
+        self.assertEqual(first, second)
+        self.assertGreaterEqual(first, 50.0)
+        self.assertLessEqual(first, 100.0)
 
-    def test_tfidf_cosine_similarity_unrelated(self):
-        res = "Chef and culinary specialist with 10 years experience in French pastry, baking, and kitchen inventory."
-        jd = "Senior Cloud Architect needed for Kubernetes cluster automation, AWS infrastructure, and Terraform."
-        score, _ = calculate_tfidf_similarity(res, jd)
-        
-        # Unrelated texts should have very low cosine similarity
+    def test_unrelated_documents_have_low_similarity(self):
+        score = calculate_tfidf_similarity(UNRELATED_RESUME, UNRELATED_JOB)
+        self.assertGreaterEqual(score, 0.0)
         self.assertLess(score, 25.0)
 
-    def test_skills_extraction(self):
-        res = "Proficient in Python, SQL, React, Git, Agile, and SEO."
-        jd = "Requires Python, SQL, React, Docker, and AWS. Agile methodology experience preferred."
-        data = extract_skills_analysis(res, jd)
-        
-        matched_names = [s['name'] for s in data['matched_skills']]
-        missing_names = [s['name'] for s in data['missing_skills']]
-        
-        self.assertIn('Python', matched_names)
-        self.assertIn('SQL', matched_names)
-        self.assertIn('React', matched_names)
-        self.assertIn('Agile', matched_names)
-        self.assertIn('Docker', missing_names)
-        self.assertIn('AWS', missing_names)
-        self.assertGreaterEqual(data['skill_match_score'], 50)
+    def test_empty_documents_return_zero(self):
+        self.assertEqual(calculate_tfidf_similarity("", RELEVANT_JOB), 0.0)
+        self.assertEqual(calculate_tfidf_similarity(RELEVANT_RESUME, "   "), 0.0)
 
-    def test_ats_checker_student_tolerance(self):
-        # Student with NO employment history, but strong Projects & Education
-        student_resume = """
-        SARAH CONNOR
-        sarah.connor@university.edu | (555) 345-6789 | Austin, TX | linkedin.com/in/sarahconnor
+    def test_stopwords_only_documents_return_zero(self):
+        self.assertEqual(
+            calculate_tfidf_similarity("the and with for this that", "the and with for this that"),
+            0.0,
+        )
 
-        PROFESSIONAL SUMMARY
-        Final year Computer Science student passionate about machine learning and backend API development.
 
-        TECHNICAL SKILLS
-        Languages: Python, Java, SQL, C++
-        Frameworks: FastAPI, Flask, React
-        Tools: Git, Linux, Docker
+class KeywordCoverageTests(unittest.TestCase):
+    def test_matched_and_missing_keywords(self):
+        job = "We require Python, Flask, React, SQL, Git, and Communication."
+        resume = "Python, React, SQL, Git."
 
-        EDUCATION
-        Bachelor of Science in Computer Science | University of Texas | Expected May 2026
-        Dean's Honor List, Relevant coursework: Data Structures, Database Management, Operating Systems.
+        result = analyze_keywords(resume, job)
 
-        PROJECTS
-        AI ResumeMatch FYP | Python, Flask, scikit-learn, SQLite
-        - Engineered explainable NLP pipeline comparing candidate resumes with job postings.
-        - Designed 7-domain skills gap analyzer with 85% parsing precision.
-        """
-        report = evaluate_ats_compatibility(student_resume, "Python SQL Docker", ['Docker'])
-        
-        self.assertGreaterEqual(report['atsScore'], 80)
-        self.assertTrue(report['contactDetails']['emailFound'])
-        self.assertTrue(report['contactDetails']['phoneFound'])
-        self.assertTrue(report['contactDetails']['linkedinFound'])
-        
-        # Check that Work Experience was given student tolerance
-        work_sec = next((s for s in report['sectionsDetected'] if s['sectionName'] == 'Work Experience'), None)
-        self.assertIsNotNone(work_sec)
-        self.assertEqual(work_sec['status'], 'alternative_present')
+        matched = {item["keyword"] for item in result["matched_keywords"]}
+        missing = {item["keyword"] for item in result["missing_keywords"]}
 
-    def test_ats_checker_missing_contact_info(self):
-        no_contact_resume = """
-        CANDIDATE ANONYMOUS
-        San Francisco, CA
+        self.assertEqual(result["job_keyword_count"], 6)
+        self.assertEqual(matched, {"Python", "React", "SQL", "Git"})
+        self.assertEqual(missing, {"Flask", "Communication"})
+        self.assertEqual(result["keyword_coverage"], 66.7)
 
-        SUMMARY
-        Software developer with web experience.
+    def test_no_job_keywords_does_not_divide_by_zero(self):
+        result = analyze_keywords(
+            "A friendly candidate who values curiosity and kindness.",
+            "We are a friendly group that values curiosity and kindness.",
+        )
 
-        SKILLS
-        Python, HTML, CSS
+        self.assertEqual(result["job_keyword_count"], 0)
+        self.assertEqual(result["keyword_coverage"], 0.0)
+        self.assertEqual(result["matched_keywords"], [])
+        self.assertEqual(result["missing_keywords"], [])
 
-        EDUCATION
-        B.S. Computer Science
-        """
-        report = evaluate_ats_compatibility(no_contact_resume)
-        self.assertFalse(report['contactDetails']['emailFound'])
-        self.assertFalse(report['contactDetails']['phoneFound'])
-        self.assertLess(report['atsScore'], 70)
-        self.assertTrue(any(r['priority'] == 'high' for r in report['recommendations']))
+    def test_duplicate_keywords_are_counted_once(self):
+        result = analyze_keywords(
+            "Python and React experience.",
+            "Python Python PYTHON. Flask flask. React.",
+        )
 
-    def test_database_crud(self):
-        sample_analysis = {
-            'id': 'test-analysis-001',
-            'timestamp': '2026-10-19 12:00',
-            'resume_title': 'Unit Test Resume',
-            'candidate_name': 'Test Candidate',
-            'job_title': 'Unit Test Engineer',
-            'company_name': 'Test Labs',
-            'cosine_similarity': 82.5,
-            'skill_match_score': 85.0,
-            'keyword_density_score': 80.0,
-            'ats_readability_score': 88.0,
-            'overall_score': 84.0,
-            'word_count_resume': 250,
-            'word_count_jd': 300,
-            'matched_skills': [{'name': 'Python', 'category': 'Programming Languages'}],
-            'missing_skills': [{'name': 'Docker', 'category': 'Cloud & DevOps'}],
-            'category_gaps': [],
-            'top_term_weights': []
-        }
-        
-        # 1. Save
-        saved_id = save_analysis(sample_analysis)
-        self.assertEqual(saved_id, 'test-analysis-001')
-        
-        # 2. Retrieve by ID
-        retrieved = get_analysis_by_id('test-analysis-001')
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved['resume_title'], 'Unit Test Resume')
-        self.assertEqual(retrieved['overall_score'], 84.0)
-        
-        # 3. Retrieve recent
-        recent = get_recent_analyses(10)
-        self.assertTrue(any(r['id'] == 'test-analysis-001' for r in recent))
-        
-        # 4. Delete
-        deleted = delete_analysis_by_id('test-analysis-001')
-        self.assertTrue(deleted)
-        
-        # Verify deletion
-        self.assertIsNone(get_analysis_by_id('test-analysis-001'))
+        py = next(item for item in result["matched_keywords"] if item["keyword"] == "Python")
+        missing = {item["keyword"] for item in result["missing_keywords"]}
 
-    def test_report_generation(self):
-        sample_analysis = {
-            'id': 'rep-001',
-            'timestamp': '2026-10-19 12:00',
-            'resume_title': 'Alex Chen',
-            'job_title': 'Full Stack Engineer',
-            'overall_score': 85,
-            'cosine_similarity': 82.0,
-            'skill_match_score': 88.0,
-            'ats_readability_score': 90.0,
-            'matched_skills': [{'name': 'Python', 'category': 'Programming Languages', 'frequencyInJD': 2}],
-            'missing_skills': [{'name': 'Kubernetes', 'category': 'Cloud & DevOps', 'importance': 'Required', 'frequencyInJD': 3}],
-            'recommendations': [{'type': 'critical', 'title': 'Add Kubernetes', 'targetSection': 'Skills', 'description': 'Required tool', 'suggestedAction': 'Add to skills'}],
-            'ats_compatibility_report': {
-                'atsScore': 90,
-                'contactDetails': {'emailFound': True, 'emailAddress': 'alex@example.com', 'phoneFound': True, 'phoneNumber': '(555) 123-4567', 'linkedinFound': True},
-                'sectionsDetected': [{'sectionName': 'Skills', 'status': 'present'}]
-            }
-        }
-        text_report = generate_text_report(sample_analysis)
-        self.assertIn("AI ResumeMatch", text_report)
-        self.assertIn("Alex Chen", text_report)
-        self.assertIn("Full Stack Engineer", text_report)
-        self.assertIn("IMPORTANT NOTICE", text_report)
-        self.assertIn("85 / 100", text_report)
+        self.assertEqual(py["job_frequency"], 3)
+        self.assertEqual(py["resume_frequency"], 1)
+        self.assertEqual(result["job_keyword_count"], 3)
+        self.assertIn("Flask", missing)
+        self.assertEqual(result["keyword_coverage"], 66.7)
 
-if __name__ == '__main__':
+    def test_short_aliases_do_not_match_inside_other_skill_names(self):
+        result = analyze_keywords(
+            "Built services with Node.js and Express.js.",
+            "Strong JavaScript and TypeScript experience required.",
+        )
+
+        matched = {item["keyword"] for item in result["matched_keywords"]}
+        missing = {item["keyword"]: item for item in result["missing_keywords"]}
+        self.assertNotIn("JavaScript", matched)
+        self.assertNotIn("TypeScript", matched)
+        self.assertEqual(missing["JavaScript"]["job_frequency"], 1)
+        self.assertEqual(missing["TypeScript"]["job_frequency"], 1)
+
+    def test_keyword_and_alias_overlap_count_once(self):
+        result = analyze_keywords(
+            "Built APIs with Express.js.",
+            "Experience with Express.js is required.",
+        )
+
+        express = next(item for item in result["matched_keywords"] if item["keyword"] == "Express.js")
+        self.assertEqual(express["job_frequency"], 1)
+        self.assertEqual(express["resume_frequency"], 1)
+
+    def test_resume_keywords_only_include_dictionary_terms(self):
+        result = analyze_keywords(
+            "I enjoy hiking, cooking and reading. I also know Python and SQL.",
+            "Python developer wanted.",
+        )
+
+        resume_keywords = {item["keyword"] for item in result["resume_keywords"]}
+        self.assertEqual(resume_keywords, {"Python", "SQL"})
+
+
+class SuggestionTests(unittest.TestCase):
+    def test_suggestions_are_derived_from_missing_keywords(self):
+        keywords = analyze_keywords("Python and SQL.", "Python, SQL, Flask and Communication.")
+        suggestions = generate_suggestions(
+            matched_keywords=keywords["matched_keywords"],
+            missing_keywords=keywords["missing_keywords"],
+            job_keyword_count=keywords["job_keyword_count"],
+            keyword_coverage=keywords["keyword_coverage"],
+            resume_keyword_count=len(keywords["resume_keywords"]),
+            resume_word_count=180,
+        )
+
+        text = " ".join(item["title"] + " " + item["description"] + " " + item["action"] for item in suggestions)
+        self.assertTrue(any("Flask" in item["action"] for item in suggestions))
+        self.assertIn("communication", text.casefold())
+        self.assertTrue(any("only include" in item["action"].casefold() for item in suggestions))
+        self.assertTrue(any("review" in item["title"].casefold() for item in suggestions))
+
+    def test_suggestions_when_no_job_keywords(self):
+        keywords = analyze_keywords("Python developer.", "A friendly team.")
+        suggestions = generate_suggestions(
+            matched_keywords=keywords["matched_keywords"],
+            missing_keywords=keywords["missing_keywords"],
+            job_keyword_count=keywords["job_keyword_count"],
+            keyword_coverage=keywords["keyword_coverage"],
+            resume_keyword_count=len(keywords["resume_keywords"]),
+            resume_word_count=40,
+        )
+
+        titles = " ".join(item["title"] for item in suggestions).casefold()
+        self.assertIn("no known keywords", titles)
+        self.assertTrue(any("do not add experience" in item["action"].casefold() for item in suggestions))
+
+
+class ParserTests(unittest.TestCase):
+    def test_docx_extraction(self):
+        text = extract_text_from_docx(build_docx())
+        self.assertIn("John Doe", text)
+        self.assertIn("Python", text)
+        self.assertIn("scikit-learn", text)
+
+    def test_pdf_extraction(self):
+        text = extract_text_from_pdf(build_pdf())
+        self.assertIn("John Doe", text)
+        self.assertIn("Python", text)
+        self.assertIn("Flask", text)
+
+    def test_invalid_pdf_is_rejected(self):
+        with self.assertRaises(RuntimeError):
+            extract_text_from_pdf(b"this is not a pdf")
+
+    def test_invalid_docx_is_rejected(self):
+        with self.assertRaises(RuntimeError):
+            extract_text_from_docx(b"this is not a docx package")
+
+
+class ApiTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        app.config.update(TESTING=True)
+        cls.client = app.test_client()
+
+    def test_health(self):
+        response = self.client.get("/api/health")
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["status"], "healthy")
+        self.assertEqual(payload["supported_formats"], [".docx", ".pdf"])
+
+    def test_extract_docx(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(build_docx()), "resume.docx")},
+            content_type="multipart/form-data",
+        )
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["filename"], "resume.docx")
+        self.assertGreaterEqual(payload["word_count"], 10)
+        self.assertIn("Python", payload["extracted_text"])
+
+    def test_extract_pdf(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(build_pdf()), "resume.pdf")},
+            content_type="multipart/form-data",
+        )
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["filename"], "resume.pdf")
+        self.assertIn("Flask", payload["extracted_text"])
+
+    def test_reject_unsupported_file_type(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(b"plain text resume"), "resume.txt")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Unsupported file type", response.get_json()["error"])
+
+    def test_reject_empty_file(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(b""), "resume.pdf")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("empty", response.get_json()["error"].casefold())
+
+    def test_reject_unreadable_pdf(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(b"%PDF-1.4 not really a pdf"), "resume.pdf")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("error", response.get_json())
+
+    def test_analyze_requires_job_description(self):
+        response = self.client.post(
+            "/api/analyze",
+            json={"resume_text": RELEVANT_RESUME, "job_description": ""},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Job description", response.get_json()["error"])
+
+    def test_analyze_requires_minimum_resume_text(self):
+        response = self.client.post(
+            "/api/analyze",
+            json={"resume_text": "Python developer", "job_description": RELEVANT_JOB},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("too short", response.get_json()["error"])
+
+    def test_analyze_returns_structured_result(self):
+        response = self.client.post(
+            "/api/analyze",
+            json={
+                "resume_text": RELEVANT_RESUME,
+                "job_description": RELEVANT_JOB,
+                "resume_title": "Test Resume",
+                "job_title": "Full Stack Engineer",
+            },
+        )
+        payload = response.get_json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["resume_title"], "Test Resume")
+        self.assertEqual(payload["job_title"], "Full Stack Engineer")
+        self.assertGreaterEqual(payload["match_percentage"], 50.0)
+        self.assertLessEqual(payload["match_percentage"], 100.0)
+        self.assertGreaterEqual(payload["keyword_coverage"], 0.0)
+        self.assertLessEqual(payload["keyword_coverage"], 100.0)
+        self.assertGreater(payload["job_keyword_count"], 0)
+        self.assertTrue(payload["matched_keywords"])
+        self.assertTrue(payload["suggestions"])
+        self.assertIn("hiring probability", payload["disclaimer"])
+        self.assertIn("id", payload)
+        self.assertIn("timestamp", payload)
+
+    def test_analyze_empty_dictionary_case(self):
+        response = self.client.post(
+            "/api/analyze",
+            json={
+                "resume_text": "A friendly candidate who enjoys reading, cooking, hiking and the outdoors every weekend.",
+                "job_description": "A friendly team that values curiosity, kindness, reading and outdoor hobbies.",
+            },
+        )
+        payload = response.get_json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["job_keyword_count"], 0)
+        self.assertEqual(payload["keyword_coverage"], 0.0)
+        self.assertEqual(payload["matched_keywords"], [])
+        self.assertEqual(payload["missing_keywords"], [])
+
+
+class OrchestrationTests(unittest.TestCase):
+    def test_analyze_full_has_no_composite_scores(self):
+        result = analyze_full(RELEVANT_RESUME, RELEVANT_JOB, "Resume", "Job")
+
+        self.assertIn("match_percentage", result)
+        self.assertIn("keyword_coverage", result)
+        self.assertNotIn("overall_score", result)
+        self.assertNotIn("skill_match_score", result)
+        self.assertNotIn("ats_compatibility_report", result)
+        self.assertNotIn("ai_insights", result)
+
+
+if __name__ == "__main__":
     unittest.main()

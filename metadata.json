@@ -1,6 +1,6 @@
 {
-  "name": "AI ResumeMatch — Smart Resume & Job Description Analyzer",
-  "description": "An explainable NLP platform for students and job seekers to compare resumes with job descriptions, compute TF-IDF cosine similarity scores, identify skill gaps, and optimize applications.",
+  "name": "AI ResumeMatch — NLP Resume and Job Description Matcher",
+  "description": "A simplified final-year project that compares a PDF/DOCX resume with a job description using scikit-learn TF-IDF cosine similarity, dictionary-based keyword matching and rule-based suggestions.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

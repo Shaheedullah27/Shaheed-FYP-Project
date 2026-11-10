@@ -1,4 +1,4 @@
-import { SampleDocument, HistoryItem } from '../types';
+import { SampleDocument } from '../types';
 
 export const SAMPLE_RESUMES: SampleDocument[] = [
   {
@@ -218,47 +218,3 @@ QUALIFICATIONS:
   }
 ];
 
-export const INITIAL_HISTORY: HistoryItem[] = [
-  {
-    id: 'hist-1',
-    timestamp: '2026-10-18 14:32',
-    resumeTitle: 'Alex Chen — Full Stack Software Engineer',
-    candidateName: 'Alex Chen',
-    jobTitle: 'Senior / Mid-Level Full Stack Engineer',
-    companyName: 'Acme SaaS Inc.',
-    overallScore: 84,
-    cosineSimilarity: 82.5,
-    atsScore: 88,
-    matchedSkillCount: 14,
-    missingSkillCount: 3,
-    topMissingSkill: 'AWS'
-  },
-  {
-    id: 'hist-2',
-    timestamp: '2026-10-17 11:15',
-    resumeTitle: 'Priya Sharma — Junior AI & Data Scientist',
-    candidateName: 'Priya Sharma',
-    jobTitle: 'Junior Machine Learning / Data Scientist',
-    companyName: 'Cognitive Insights Labs',
-    overallScore: 89,
-    cosineSimilarity: 87.2,
-    atsScore: 92,
-    matchedSkillCount: 15,
-    missingSkillCount: 2,
-    topMissingSkill: 'FastAPI'
-  },
-  {
-    id: 'hist-3',
-    timestamp: '2026-10-15 09:40',
-    resumeTitle: 'Alex Chen — Full Stack Software Engineer',
-    candidateName: 'Alex Chen',
-    jobTitle: 'Cloud DevOps Engineer',
-    companyName: 'Nexlify Cloud Solutions',
-    overallScore: 56,
-    cosineSimilarity: 54.0,
-    atsScore: 78,
-    matchedSkillCount: 7,
-    missingSkillCount: 11,
-    topMissingSkill: 'Kubernetes'
-  }
-];

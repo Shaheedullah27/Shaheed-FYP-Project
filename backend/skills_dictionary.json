@@ -1,26 +1,28 @@
 {
   "Programming Languages": [
-    { "name": "Python", "aliases": ["python3", "py"] },
+    { "name": "Python", "aliases": ["python3"] },
     { "name": "JavaScript", "aliases": ["js", "ecmascript"] },
     { "name": "TypeScript", "aliases": ["ts"] },
-    { "name": "Java", "aliases": ["jdk", "core java"] },
+    { "name": "Java", "aliases": ["core java"] },
     { "name": "C++", "aliases": ["cpp", "c plus plus"] },
-    { "name": "C#", "aliases": ["csharp", ".net"] },
-    { "name": "Go", "aliases": ["golang"] },
+    { "name": "C#", "aliases": ["csharp", "c sharp"] },
+    { "name": "Go (Golang)", "aliases": ["golang"] },
     { "name": "Rust", "aliases": [] },
     { "name": "PHP", "aliases": [] },
     { "name": "Ruby", "aliases": [] },
     { "name": "Swift", "aliases": [] },
     { "name": "Kotlin", "aliases": [] },
-    { "name": "R", "aliases": ["r-lang"] },
-    { "name": "Bash", "aliases": ["shell scripting", "sh", "zsh"] }
+    { "name": "R", "aliases": ["r-lang", "r programming"] },
+    { "name": "Bash", "aliases": ["shell scripting", "shell script"] },
+    { "name": "Scala", "aliases": [] },
+    { "name": "MATLAB", "aliases": [] }
   ],
   "Databases & Storage": [
     { "name": "SQL", "aliases": ["structured query language"] },
     { "name": "PostgreSQL", "aliases": ["postgres"] },
     { "name": "MySQL", "aliases": [] },
     { "name": "MongoDB", "aliases": ["mongo", "nosql"] },
-    { "name": "Redis", "aliases": ["caching", "in-memory database"] },
+    { "name": "Redis", "aliases": ["in-memory database"] },
     { "name": "SQLite", "aliases": [] },
     { "name": "Firebase", "aliases": ["firestore"] },
     { "name": "Elasticsearch", "aliases": ["elk"] },
@@ -29,7 +31,7 @@
   ],
   "Web Development": [
     { "name": "React", "aliases": ["reactjs", "react.js"] },
-    { "name": "Node.js", "aliases": ["nodejs", "node"] },
+    { "name": "Node.js", "aliases": ["nodejs"] },
     { "name": "Express.js", "aliases": ["express", "expressjs"] },
     { "name": "HTML5", "aliases": ["html"] },
     { "name": "CSS3", "aliases": ["css", "scss", "sass"] },
@@ -41,7 +43,53 @@
     { "name": "FastAPI", "aliases": [] },
     { "name": "Tailwind CSS", "aliases": ["tailwind"] },
     { "name": "REST APIs", "aliases": ["restful api", "rest api", "web apis"] },
-    { "name": "GraphQL", "aliases": [] }
+    { "name": "GraphQL", "aliases": [] },
+    { "name": "Redux", "aliases": [] },
+    { "name": "Vite", "aliases": [] },
+    { "name": "Webpack", "aliases": [] },
+    { "name": "Microservices", "aliases": ["microservice architecture", "microservices architecture"] }
+  ],
+  "Data Science & Machine Learning": [
+    { "name": "Machine Learning", "aliases": ["ml"] },
+    { "name": "Natural Language Processing", "aliases": ["nlp"] },
+    { "name": "Scikit-learn", "aliases": ["sklearn", "scikit learn"] },
+    { "name": "TensorFlow", "aliases": [] },
+    { "name": "PyTorch", "aliases": [] },
+    { "name": "Pandas", "aliases": [] },
+    { "name": "NumPy", "aliases": [] },
+    { "name": "TF-IDF", "aliases": ["tfidf", "tf idf"] },
+    { "name": "Cosine Similarity", "aliases": [] },
+    { "name": "Data Analysis", "aliases": ["data analytics", "exploratory data analysis", "eda"] },
+    { "name": "Data Visualization", "aliases": ["visualization", "data visualisation"] },
+    { "name": "Deep Learning", "aliases": [] },
+    { "name": "Statistical Modeling", "aliases": ["statistical analysis", "statistics"] },
+    { "name": "Jupyter", "aliases": ["jupyter notebook"] },
+    { "name": "Streamlit", "aliases": [] },
+    { "name": "Tableau", "aliases": [] },
+    { "name": "Power BI", "aliases": ["powerbi"] }
+  ],
+  "Cloud & DevOps": [
+    { "name": "AWS", "aliases": ["amazon web services"] },
+    { "name": "Google Cloud Platform", "aliases": ["gcp", "google cloud"] },
+    { "name": "Azure", "aliases": ["microsoft azure"] },
+    { "name": "Docker", "aliases": ["containerization", "containers"] },
+    { "name": "Kubernetes", "aliases": ["k8s", "eks"] },
+    { "name": "CI/CD", "aliases": ["continuous integration", "continuous deployment", "github actions", "gitlab ci"] },
+    { "name": "Terraform", "aliases": ["infrastructure as code", "iac"] },
+    { "name": "Linux", "aliases": ["unix", "ubuntu"] },
+    { "name": "Git", "aliases": ["github", "gitlab", "version control"] },
+    { "name": "Nginx", "aliases": [] },
+    { "name": "Jenkins", "aliases": [] },
+    { "name": "Helm", "aliases": [] },
+    { "name": "Prometheus", "aliases": [] },
+    { "name": "Grafana", "aliases": [] }
+  ],
+  "Testing & Quality": [
+    { "name": "Unit Testing", "aliases": ["unit test", "unit tests", "jest", "pytest", "test automation"] },
+    { "name": "Integration Testing", "aliases": [] },
+    { "name": "Selenium", "aliases": [] },
+    { "name": "Cypress", "aliases": [] },
+    { "name": "Code Review", "aliases": ["peer code review", "code reviews"] }
   ],
   "Project Management": [
     { "name": "Agile", "aliases": ["agile methodology"] },
@@ -56,37 +104,36 @@
     { "name": "Confluence", "aliases": [] },
     { "name": "Trello", "aliases": [] }
   ],
+  "Communication & Interpersonal": [
+    { "name": "Communication", "aliases": ["written communication", "verbal communication", "communication skills", "communicate", "communicating", "business writing", "documentation"] },
+    { "name": "Cross-Functional Collaboration", "aliases": ["collaboration", "collaborative", "team collaboration", "teamwork", "team player", "interdepartmental collaboration"] },
+    { "name": "Problem Solving", "aliases": ["troubleshooting", "analytical thinking", "problem-solving"] },
+    { "name": "Active Listening", "aliases": [] },
+    { "name": "Negotiation", "aliases": ["consensus building"] },
+    { "name": "Conflict Resolution", "aliases": [] },
+    { "name": "Public Speaking", "aliases": ["oral communication", "presentation skills", "client presentation"] },
+    { "name": "Mentorship", "aliases": ["coaching", "peer mentoring"] },
+    { "name": "Leadership", "aliases": ["team lead", "led a team", "leadership skills"] },
+    { "name": "Time Management", "aliases": ["prioritization"] }
+  ],
   "Marketing & Analytics": [
-    { "name": "SEO", "aliases": ["search engine optimization", "on-page seo"] },
+    { "name": "SEO", "aliases": ["search engine optimization", "search engine optimisation", "on-page seo"] },
     { "name": "SEM & PPC", "aliases": ["google ads", "paid search", "pay per click"] },
     { "name": "Google Analytics", "aliases": ["ga4", "web analytics"] },
     { "name": "Content Strategy", "aliases": ["content marketing", "content creation"] },
     { "name": "Copywriting", "aliases": ["ad copywriting", "technical writing"] },
     { "name": "Social Media Marketing", "aliases": ["smm", "social campaigns"] },
     { "name": "Email Marketing", "aliases": ["mailchimp", "newsletter campaigns"] },
-    { "name": "Conversion Rate Optimization", "aliases": ["cro", "a/b testing"] },
+    { "name": "Conversion Rate Optimization", "aliases": ["cro", "a/b testing", "conversion optimization"] },
     { "name": "Market Research", "aliases": ["competitive analysis", "user research"] },
     { "name": "CRM", "aliases": ["hubspot", "salesforce"] }
   ],
-  "Communication & Interpersonal": [
-    { "name": "Written Communication", "aliases": ["business writing", "documentation"] },
-    { "name": "Verbal Communication", "aliases": ["oral communication", "presentation skills"] },
-    { "name": "Cross-Functional Collaboration", "aliases": ["interdepartmental collaboration", "teamwork"] },
-    { "name": "Problem Solving", "aliases": ["troubleshooting", "analytical thinking"] },
-    { "name": "Active Listening", "aliases": [] },
-    { "name": "Negotiation", "aliases": ["consensus building"] },
-    { "name": "Conflict Resolution", "aliases": [] },
-    { "name": "Public Speaking", "aliases": ["client presentation", "keynote"] },
-    { "name": "Mentorship", "aliases": ["coaching", "peer mentoring"] }
-  ],
-  "Cloud & DevOps": [
-    { "name": "AWS", "aliases": ["amazon web services", "ec2", "s3", "lambda"] },
-    { "name": "Docker", "aliases": ["containerization", "containers"] },
-    { "name": "Kubernetes", "aliases": ["k8s"] },
-    { "name": "CI/CD", "aliases": ["continuous integration", "github actions", "gitlab ci"] },
-    { "name": "Terraform", "aliases": ["iac", "infrastructure as code"] },
-    { "name": "Linux", "aliases": ["unix", "ubuntu"] },
-    { "name": "Git", "aliases": ["github", "gitlab", "version control"] },
-    { "name": "Unit Testing", "aliases": ["jest", "pytest", "test automation"] }
+  "Design & Tools": [
+    { "name": "Figma", "aliases": [] },
+    { "name": "UI/UX Design", "aliases": ["ui design", "ux design", "user experience", "user interface"] },
+    { "name": "Wireframing", "aliases": ["wireframes"] },
+    { "name": "Prototyping", "aliases": ["prototype"] },
+    { "name": "Adobe XD", "aliases": [] },
+    { "name": "Postman", "aliases": [] }
   ]
 }
