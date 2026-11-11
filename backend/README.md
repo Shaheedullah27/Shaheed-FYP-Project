@@ -71,6 +71,8 @@ Both texts must contain at least 10 words. The response contains:
 - **Canonical keyword deduplication** means repeated mentions or multiple aliases count once in coverage.
 - **Zero-division guard** returns `0.0` coverage when the posting has no dictionary keywords.
 - **No storage** — uploads are processed in memory and analysis results are returned without persistence.
+- **Single normalisation pass** — `/api/analyze` cleans each document once and reuses the result for both TF-IDF and keyword matching; keyword patterns are compiled once per process instead of once per request.
+- **Consistent errors** — validation, `404`, `405`, `413` and `500` responses all return `{"error": "..."}` JSON.
 
 ## Tests
 

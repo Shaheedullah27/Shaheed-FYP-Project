@@ -59,6 +59,30 @@ const deriveJobTitle = (text: string) => {
   return line.replace(/^job\s*title\s*[:\-–]\s*/i, '').slice(0, 100);
 };
 
+interface ReadinessState {
+  isParsingFile: boolean;
+  resumeText: string;
+  resumeReady: boolean;
+  jobDescriptionText: string;
+  jdReady: boolean;
+}
+
+/** Plain-language explanation of why the submit button cannot be used yet. */
+const describeBlockingReason = ({
+  isParsingFile,
+  resumeText,
+  resumeReady,
+  jobDescriptionText,
+  jdReady,
+}: ReadinessState): string | null => {
+  if (isParsingFile) return 'Waiting for your file to finish reading…';
+  if (!resumeText.trim()) return 'Add your resume to continue.';
+  if (!resumeReady) return `Add a little more resume text (at least ${MIN_WORDS} words).`;
+  if (!jobDescriptionText.trim()) return 'Paste the job description to continue.';
+  if (!jdReady) return `Add a little more of the job description (at least ${MIN_WORDS} words).`;
+  return null;
+};
+
 const StepHeading: React.FC<{ step: number; title: string; description: string }> = ({
   step,
   title,
@@ -104,17 +128,13 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   const jdReady = jdWords >= MIN_WORDS;
   const canSubmit = resumeReady && jdReady && !isParsingFile;
 
-  const disabledReason = isParsingFile
-    ? 'Waiting for your file to finish reading…'
-    : !resumeText.trim()
-      ? 'Add your resume to continue.'
-      : !resumeReady
-        ? `Add a little more resume text (at least ${MIN_WORDS} words).`
-        : !jobDescriptionText.trim()
-          ? 'Paste the job description to continue.'
-          : !jdReady
-            ? `Add a little more of the job description (at least ${MIN_WORDS} words).`
-            : null;
+  const disabledReason = describeBlockingReason({
+    isParsingFile,
+    resumeText,
+    resumeReady,
+    jobDescriptionText,
+    jdReady,
+  });
 
   const handleFile = async (file: File) => {
     // Reset immediately so choosing the same file twice still fires onChange.

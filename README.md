@@ -184,6 +184,8 @@ Errors:
 | `413` | File larger than 10 MB |
 | `422` | Unreadable/scanned document or too little extractable text |
 
+Every API failure uses the same JSON shape, `{"error": "readable message"}`. Unknown routes return `404` and unsupported methods return `405` in that same shape instead of an HTML error page.
+
 ### `POST /api/analyze`
 
 ```json
@@ -318,7 +320,7 @@ npm run lint
 npm run build
 ```
 
-`npm test` runs the backend unittest suite using the active Python environment.
+`npm run lint` runs `tsc --noEmit` with `strict`, `noUnusedLocals` and `noUnusedParameters` enabled. `npm test` runs the backend unittest suite using the active Python environment.
 
 ---
 

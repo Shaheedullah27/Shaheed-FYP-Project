@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Terminal,
@@ -52,12 +52,25 @@ const PIPELINE = [
 
 export const BackendGuideView: React.FC<BackendGuideViewProps> = ({ onTabChange }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const resetTimer = useRef<number | null>(null);
+
+  // Clear a pending "Copied" reset when the page unmounts.
+  useEffect(
+    () => () => {
+      if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+    },
+    []
+  );
 
   const copyCode = async (code: string, index: number) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedIndex(index);
-      window.setTimeout(() => setCopiedIndex(null), 2000);
+      if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+      resetTimer.current = window.setTimeout(() => {
+        setCopiedIndex(null);
+        resetTimer.current = null;
+      }, 2000);
     } catch {
       setCopiedIndex(null);
     }

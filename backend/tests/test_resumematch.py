@@ -336,6 +336,64 @@ class ApiTests(unittest.TestCase):
         self.assertIn("id", payload)
         self.assertIn("timestamp", payload)
 
+    def test_analyze_repeated_requests_are_stable(self):
+        payload = {"resume_text": RELEVANT_RESUME, "job_description": RELEVANT_JOB}
+        first = self.client.post("/api/analyze", json=payload).get_json()
+        second = self.client.post("/api/analyze", json=payload).get_json()
+
+        for key in (
+            "match_percentage",
+            "keyword_coverage",
+            "job_keyword_count",
+            "matched_keyword_count",
+        ):
+            self.assertEqual(first[key], second[key])
+        self.assertEqual(first["matched_keywords"], second["matched_keywords"])
+        self.assertNotEqual(first["id"], second["id"])
+
+    def test_upload_filename_path_components_are_stripped(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(build_docx()), "C:\\Users\\me\\resume.docx")},
+            content_type="multipart/form-data",
+        )
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["filename"], "resume.docx")
+
+    def test_uppercase_extension_is_accepted(self):
+        response = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(build_pdf()), "RESUME.PDF")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_unknown_endpoint_returns_json(self):
+        response = self.client.get("/api/does-not-exist")
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("error", response.get_json())
+
+    def test_wrong_method_returns_json(self):
+        response = self.client.get("/api/analyze")
+        self.assertEqual(response.status_code, 405)
+        self.assertIn("error", response.get_json())
+
+    def test_oversized_request_returns_json_413(self):
+        original_limit = app.config["MAX_CONTENT_LENGTH"]
+        app.config["MAX_CONTENT_LENGTH"] = 512
+        try:
+            response = self.client.post(
+                "/api/extract-resume",
+                data={"file": (io.BytesIO(b"%PDF-1.4" + b"0" * 2048), "resume.pdf")},
+                content_type="multipart/form-data",
+            )
+        finally:
+            app.config["MAX_CONTENT_LENGTH"] = original_limit
+
+        self.assertEqual(response.status_code, 413)
+        self.assertIn("10 MB", response.get_json()["error"])
+
     def test_analyze_empty_dictionary_case(self):
         response = self.client.post(
             "/api/analyze",
@@ -354,6 +412,18 @@ class ApiTests(unittest.TestCase):
 
 
 class OrchestrationTests(unittest.TestCase):
+    def test_analyze_full_matches_public_helpers(self):
+        result = analyze_full(RELEVANT_RESUME, RELEVANT_JOB)
+        keywords = analyze_keywords(RELEVANT_RESUME, RELEVANT_JOB)
+
+        self.assertEqual(
+            result["match_percentage"],
+            calculate_tfidf_similarity(RELEVANT_RESUME, RELEVANT_JOB),
+        )
+        self.assertEqual(result["matched_keywords"], keywords["matched_keywords"])
+        self.assertEqual(result["missing_keywords"], keywords["missing_keywords"])
+        self.assertEqual(result["keyword_coverage"], keywords["keyword_coverage"])
+
     def test_analyze_full_has_no_composite_scores(self):
         result = analyze_full(RELEVANT_RESUME, RELEVANT_JOB, "Resume", "Job")
 

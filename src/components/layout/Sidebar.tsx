@@ -37,7 +37,7 @@ const MORE: NavItem[] = [
   { id: 'about', label: 'About', icon: GraduationCap },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({
+const SidebarView: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   hasResults,
@@ -184,3 +184,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+
+SidebarView.displayName = 'Sidebar';
+
+/** Navigation only re-renders when its own props change, not on every analysis state update. */
+export const Sidebar = React.memo(SidebarView);

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -26,12 +26,42 @@ const friendlyError = (error: unknown): string => {
   return 'The analysis did not finish. Check the documents and try again.';
 };
 
+type Theme = 'dark' | 'light';
+
+const THEME_STORAGE_KEY = 'resume-match-theme';
+
+/** Theme preference is a convenience, never a hard requirement: storage can throw. */
+const readStoredTheme = (): Theme => {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+};
+
+const storeTheme = (theme: Theme): void => {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Storage may be blocked (private mode / disabled cookies); the theme still applies.
+  }
+};
+
+const FULL_PAGE_TRANSITION = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -6 },
+};
+
+const REDUCED_PAGE_TRANSITION = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const storedTheme = localStorage.getItem('resume-match-theme');
-    return storedTheme === 'light' ? 'light' : 'dark';
-  });
+  const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [activeAnalysis, setActiveAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -40,53 +70,52 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('resume-match-theme', theme);
+    storeTheme(theme);
   }, [theme]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [activeTab]);
 
-  const handleRunAnalysis = async (
-    resumeText: string,
-    jdText: string,
-    resumeTitle: string,
-    jobTitle: string
-  ) => {
-    setIsLoading(true);
-    setAnalysisError(null);
-    setActiveTab('analyze');
+  // Stable callbacks keep memoized layout components from re-rendering on unrelated state.
+  const handleTabChange = useCallback((tab: ActiveTab) => setActiveTab(tab), []);
+  const handleToggleMobileNav = useCallback(() => setIsMobileNavOpen(open => !open), []);
+  const handleCloseMobileNav = useCallback(() => setIsMobileNavOpen(false), []);
+  const handleDismissError = useCallback(() => setAnalysisError(null), []);
+  const handleStartAnalysis = useCallback(() => setActiveTab('analyze'), []);
 
-    try {
-      const result = await analyzeResume({
-        resumeText,
-        jobDescription: jdText,
-        resumeTitle,
-        jobTitle,
-      });
-      setActiveAnalysis(result);
-      setActiveTab('results');
-    } catch (error) {
-      console.error('Analysis failed', error);
-      setAnalysisError(friendlyError(error));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleRunAnalysis = useCallback(
+    async (resumeText: string, jdText: string, resumeTitle: string, jobTitle: string) => {
+      setIsLoading(true);
+      setAnalysisError(null);
+      setActiveTab('analyze');
 
-  const startNewAnalysis = () => {
+      try {
+        const result = await analyzeResume({
+          resumeText,
+          jobDescription: jdText,
+          resumeTitle,
+          jobTitle,
+        });
+        setActiveAnalysis(result);
+        setActiveTab('results');
+      } catch (error) {
+        console.error('Analysis failed', error);
+        setAnalysisError(friendlyError(error));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const startNewAnalysis = useCallback(() => {
     setActiveAnalysis(null);
     setAnalysisError(null);
     setActiveTab('analyze');
-  };
+  }, []);
 
-  const pageTransition = reduced
-    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-    : {
-        initial: { opacity: 0, y: 8 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -6 },
-      };
+  const pageTransition = reduced ? REDUCED_PAGE_TRANSITION : FULL_PAGE_TRANSITION;
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-obsidian text-porcelain">
@@ -96,10 +125,10 @@ export default function App() {
 
       <Sidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         hasResults={Boolean(activeAnalysis)}
         isOpenMobile={isMobileNavOpen}
-        onCloseMobile={() => setIsMobileNavOpen(false)}
+        onCloseMobile={handleCloseMobileNav}
       />
 
       <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
@@ -107,7 +136,7 @@ export default function App() {
           activeTab={activeTab}
           theme={theme}
           onThemeChange={setTheme}
-          onToggleMobileNav={() => setIsMobileNavOpen(open => !open)}
+          onToggleMobileNav={handleToggleMobileNav}
         />
 
         <main
@@ -129,7 +158,7 @@ export default function App() {
                 }
               >
                 {activeTab === 'home' && (
-                  <OverviewView onStartAnalysis={() => setActiveTab('analyze')} />
+                  <OverviewView onStartAnalysis={handleStartAnalysis} />
                 )}
 
                 {activeTab === 'analyze' && (
@@ -137,7 +166,7 @@ export default function App() {
                     onRunAnalysis={handleRunAnalysis}
                     isLoading={isLoading}
                     error={analysisError}
-                    onDismissError={() => setAnalysisError(null)}
+                    onDismissError={handleDismissError}
                   />
                 )}
 
@@ -160,7 +189,7 @@ export default function App() {
                       variant="primary"
                       size="md"
                       className="mt-5"
-                      onClick={() => setActiveTab('analyze')}
+                      onClick={handleStartAnalysis}
                     >
                       Analyze My Resume
                     </Button>
@@ -168,10 +197,10 @@ export default function App() {
                 )}
 
                 {activeTab === 'how-it-works' && (
-                  <HowItWorksView onTabChange={setActiveTab} />
+                  <HowItWorksView onTabChange={handleTabChange} />
                 )}
 
-                {activeTab === 'about' && <AboutView onTabChange={setActiveTab} />}
+                {activeTab === 'about' && <AboutView onTabChange={handleTabChange} />}
               </Suspense>
             </motion.div>
           </AnimatePresence>

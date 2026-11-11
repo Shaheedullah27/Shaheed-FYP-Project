@@ -47,17 +47,8 @@ def clean_text(text: str) -> str:
 # TF-IDF / cosine similarity
 # ---------------------------------------------------------------------------
 
-def calculate_tfidf_similarity(resume_text: str, job_description: str) -> float:
-    """Return cosine similarity between resume and job description as 0-100.
-
-    Uses scikit-learn's TF-IDF vectoriser with sublinear term frequency. If
-    either document contains no usable vocabulary (for example, only stop
-    words), the similarity is safely reported as 0.0 instead of raising an
-    error.
-    """
-    resume_clean = clean_text(resume_text)
-    job_clean = clean_text(job_description)
-
+def _similarity_from_clean(resume_clean: str, job_clean: str) -> float:
+    """Cosine similarity for documents that were already normalised."""
     if not resume_clean or not job_clean:
         return 0.0
 
@@ -73,6 +64,17 @@ def calculate_tfidf_similarity(resume_text: str, job_description: str) -> float:
         return 0.0
 
     return round(min(100.0, max(0.0, float(similarity) * 100.0)), 1)
+
+
+def calculate_tfidf_similarity(resume_text: str, job_description: str) -> float:
+    """Return cosine similarity between resume and job description as 0-100.
+
+    Uses scikit-learn's TF-IDF vectoriser with sublinear term frequency. If
+    either document contains no usable vocabulary (for example, only stop
+    words), the similarity is safely reported as 0.0 instead of raising an
+    error.
+    """
+    return _similarity_from_clean(clean_text(resume_text), clean_text(job_description))
 
 
 # ---------------------------------------------------------------------------
@@ -128,7 +130,28 @@ def _normalised_terms(name: str, aliases: List[str]) -> List[str]:
     return terms
 
 
-def _count_occurrences(clean_document: str, terms: List[str]) -> int:
+@lru_cache(maxsize=1)
+def _keyword_terms() -> Tuple[Tuple[str, str, Tuple[str, ...]], ...]:
+    """Normalised ``(name, category, terms)`` entries, prepared once per process.
+
+    The dictionary is static for the lifetime of the process, so rebuilding and
+    re-normalising ~130 entries for every request would be wasted work.
+    """
+    prepared: List[Tuple[str, str, Tuple[str, ...]]] = []
+    for name, category, aliases in _iter_skill_entries():
+        terms = tuple(_normalised_terms(name, aliases))
+        if terms:
+            prepared.append((name, category, terms))
+    return tuple(prepared)
+
+
+@lru_cache(maxsize=None)
+def _term_pattern(term: str) -> "re.Pattern[str]":
+    """Compiled matcher for one normalised term, reused across requests."""
+    return re.compile(r"(?<![a-z0-9._-])" + re.escape(term) + r"(?![a-z0-9_])")
+
+
+def _count_occurrences(clean_document: str, terms: Tuple[str, ...]) -> int:
     """Count whole-term occurrences without matching longer words.
 
     Lookarounds instead of ``\\b`` keep punctuation-bearing skills working:
@@ -142,10 +165,15 @@ def _count_occurrences(clean_document: str, terms: List[str]) -> int:
     """
     spans: List[Tuple[int, int]] = []
     for term in terms:
-        pattern = re.compile(
-            r"(?<![a-z0-9._-])" + re.escape(term) + r"(?![a-z0-9_])"
+        # C-level substring guard first: most dictionary terms never appear in a
+        # given document, so the boundary regex only runs when it can match.
+        # Skipping is exact, because a regex match always contains the literal.
+        if term not in clean_document:
+            continue
+        spans.extend(
+            (match.start(), match.end())
+            for match in _term_pattern(term).finditer(clean_document)
         )
-        spans.extend((match.start(), match.end()) for match in pattern.finditer(clean_document))
 
     spans.sort()
     total = 0
@@ -171,23 +199,12 @@ def _keyword_record(
     }
 
 
-def analyze_keywords(resume_text: str, job_description: str) -> Dict[str, Any]:
-    """Identify job keywords and compare them with the resume.
-
-    Only terms from the maintained skills dictionary are treated as keywords,
-    which prevents ordinary job-posting words from inflating coverage.
-    """
-    resume_clean = clean_text(resume_text)
-    job_clean = clean_text(job_description)
-
+def _keywords_from_clean(resume_clean: str, job_clean: str) -> Dict[str, Any]:
+    """Keyword analysis for documents that were already normalised."""
     job_keywords: List[Dict[str, Any]] = []
     resume_keywords: List[Dict[str, Any]] = []
 
-    for name, category, aliases in _iter_skill_entries():
-        terms = _normalised_terms(name, aliases)
-        if not terms:
-            continue
-
+    for name, category, terms in _keyword_terms():
         job_frequency = _count_occurrences(job_clean, terms)
         resume_frequency = _count_occurrences(resume_clean, terms)
 
@@ -232,6 +249,15 @@ def analyze_keywords(resume_text: str, job_description: str) -> Dict[str, Any]:
         "matched_keyword_count": matched_count,
         "keyword_coverage": keyword_coverage,
     }
+
+
+def analyze_keywords(resume_text: str, job_description: str) -> Dict[str, Any]:
+    """Identify job keywords and compare them with the resume.
+
+    Only terms from the maintained skills dictionary are treated as keywords,
+    which prevents ordinary job-posting words from inflating coverage.
+    """
+    return _keywords_from_clean(clean_text(resume_text), clean_text(job_description))
 
 
 # ---------------------------------------------------------------------------
@@ -363,8 +389,12 @@ def analyze_full(
     job_title: str = "Target role",
 ) -> Dict[str, Any]:
     """Run the complete, deterministic resume/job comparison."""
-    match_percentage = calculate_tfidf_similarity(resume_text, job_description)
-    keyword_analysis = analyze_keywords(resume_text, job_description)
+    # Normalise each document once, then reuse the result for both metrics.
+    resume_clean = clean_text(resume_text)
+    job_clean = clean_text(job_description)
+
+    match_percentage = _similarity_from_clean(resume_clean, job_clean)
+    keyword_analysis = _keywords_from_clean(resume_clean, job_clean)
 
     resume_word_count = len(resume_text.split())
     job_description_word_count = len(job_description.split())

@@ -19,6 +19,17 @@ const VIOLET = '#D8B76A';
 const DARK_PANEL = '#142F2A';
 const SLATE_BORDER = '#1C443C';
 
+const PANEL_WIDTH = 1.35;
+const PANEL_HEIGHT = 1.85;
+const PANEL_DEPTH = 0.025;
+
+/**
+ * One shared source geometry for the document-panel outlines.
+ * Building a new BoxGeometry inside render would allocate (and never free)
+ * a buffer on every re-render, so it lives at module scope instead.
+ */
+const PANEL_BOX_GEOMETRY = new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_DEPTH);
+
 interface SceneProps {
   animate: boolean;
   density: 'high' | 'low';
@@ -58,7 +69,7 @@ const DocumentPanel: React.FC<{
     <group ref={innerRef}>
       {/* Background card with glass-like transparency */}
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[1.35, 1.85, 0.025]} />
+        <boxGeometry args={[PANEL_WIDTH, PANEL_HEIGHT, PANEL_DEPTH]} />
         <meshStandardMaterial
           color={DARK_PANEL}
           emissive={accentColor}
@@ -72,7 +83,7 @@ const DocumentPanel: React.FC<{
 
       {/* Hairline glowing outer border */}
       <lineSegments position={[0, 0, 0.016]}>
-        <edgesGeometry args={[new THREE.BoxGeometry(1.35, 1.85, 0.025)]} />
+        <edgesGeometry args={[PANEL_BOX_GEOMETRY]} />
         <lineBasicMaterial color={accentColor} transparent opacity={0.5} />
       </lineSegments>
 
@@ -165,30 +176,39 @@ const AnalysisCore: React.FC<{ innerRef: React.Ref<THREE.Group> }> = ({ innerRef
   );
 };
 
+interface SkillNode {
+  pos: [number, number, number];
+  color: string;
+  size: number;
+}
+
+const SKILL_NODES: SkillNode[] = [
+  { pos: [-0.95, 0.55, 0.2], color: MINT, size: 0.06 },
+  { pos: [-0.85, -0.45, -0.1], color: CYAN, size: 0.05 },
+  { pos: [0.95, 0.48, -0.15], color: CYAN, size: 0.055 },
+  { pos: [0.85, -0.52, 0.2], color: MINT, size: 0.06 },
+  { pos: [0, 0.95, 0.1], color: VIOLET, size: 0.05 },
+  { pos: [0, -0.92, -0.1], color: MINT, size: 0.05 },
+];
+
+const SKILL_BASE_Y = SKILL_NODES.map(node => node.pos[1]);
+
 /** Floating Glowing Skill Nodes Situated Between Panels & Core */
 const SkillNodes: React.FC<{ animate: boolean }> = ({ animate }) => {
   const nodesRef = useRef<THREE.Group>(null);
-
-  const nodePositions: Array<{ pos: [number, number, number]; color: string; size: number }> = [
-    { pos: [-0.95, 0.55, 0.2], color: MINT, size: 0.06 },
-    { pos: [-0.85, -0.45, -0.1], color: CYAN, size: 0.05 },
-    { pos: [0.95, 0.48, -0.15], color: CYAN, size: 0.055 },
-    { pos: [0.85, -0.52, 0.2], color: MINT, size: 0.06 },
-    { pos: [0, 0.95, 0.1], color: VIOLET, size: 0.05 },
-    { pos: [0, -0.92, -0.1], color: MINT, size: 0.05 },
-  ];
 
   useFrame((state) => {
     if (!animate || !nodesRef.current) return;
     const t = state.clock.elapsedTime;
     nodesRef.current.children.forEach((child, i) => {
-      child.position.y += Math.sin(t * 1.2 + i) * 0.001;
+      // Absolute offset: the same gentle bob at any frame rate, with no drift.
+      child.position.y = SKILL_BASE_Y[i] + 0.05 * (1 - Math.cos(t * 1.2 + i));
     });
   });
 
   return (
     <group ref={nodesRef}>
-      {nodePositions.map((n, i) => (
+      {SKILL_NODES.map((n, i) => (
         <group key={i} position={n.pos}>
           {/* Node core */}
           <mesh>
@@ -210,25 +230,26 @@ const SkillNodes: React.FC<{ animate: boolean }> = ({ animate }) => {
   );
 };
 
+const ORBIT_RADII = [1.2, 1.55, 1.9];
+
+const ORBIT_RINGS = [
+  { rot: [1.3, 0.2, 0.4] as [number, number, number], color: MINT, opacity: 0.45 },
+  { rot: [1.1, -0.6, -0.3] as [number, number, number], color: CYAN, opacity: 0.38 },
+  { rot: [1.5, 0.8, 0.1] as [number, number, number], color: VIOLET, opacity: 0.28 },
+];
+
 /** Orbital Torus Rings around the Central Engine */
 const OrbitRings: React.FC<{ innerRef: React.Ref<THREE.Group> }> = ({ innerRef }) => {
   const satellites = useRef<Array<THREE.Mesh | null>>([null, null, null]);
   const angles = useRef([0, 2.2, 4.4]);
-  const radii = [1.2, 1.55, 1.9];
-
-  const ringConfigs = [
-    { rot: [1.3, 0.2, 0.4] as [number, number, number], color: MINT, opacity: 0.45 },
-    { rot: [1.1, -0.6, -0.3] as [number, number, number], color: CYAN, opacity: 0.38 },
-    { rot: [1.5, 0.8, 0.1] as [number, number, number], color: VIOLET, opacity: 0.28 },
-  ];
 
   useFrame((_, delta) => {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < ORBIT_RADII.length; i++) {
       angles.current[i] += delta * (0.32 + i * 0.14);
       const sat = satellites.current[i];
       if (sat) {
         const a = angles.current[i];
-        const r = radii[i];
+        const r = ORBIT_RADII[i];
         sat.position.set(Math.cos(a) * r, Math.sin(a) * r, 0);
       }
     }
@@ -236,10 +257,10 @@ const OrbitRings: React.FC<{ innerRef: React.Ref<THREE.Group> }> = ({ innerRef }
 
   return (
     <group ref={innerRef}>
-      {ringConfigs.map((cfg, i) => (
+      {ORBIT_RINGS.map((cfg, i) => (
         <group key={i} rotation={cfg.rot}>
           <mesh>
-            <torusGeometry args={[radii[i], 0.006, 6, 120]} />
+            <torusGeometry args={[ORBIT_RADII[i], 0.006, 6, 120]} />
             <meshBasicMaterial
               color={cfg.color}
               transparent

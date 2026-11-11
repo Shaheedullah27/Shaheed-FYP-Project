@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { cn, scoreTone, toneFill } from '../../lib/ui';
+import { cn, scoreTone } from '../../lib/ui';
 
 interface ScoreRingProps {
   /** 0–100 */
@@ -46,9 +46,11 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
   const circumference = 2 * Math.PI * radius;
   const targetOffset = circumference - (safeValue / 100) * circumference;
 
+  // Unique, CSS-safe gradient id so two rings on one page never share a definition.
+  const gradientId = `ring-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+
   // Count-up for the centre number
   const [display, setDisplay] = useState(reduced ? safeValue : 0);
-  const started = useRef(false);
 
   useEffect(() => {
     if (reduced) {
@@ -65,7 +67,6 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    started.current = true;
     return () => cancelAnimationFrame(raf);
   }, [safeValue, reduced]);
 
@@ -74,7 +75,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
           <defs>
-            <linearGradient id={`ring-grad-${activeTone}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" style={{ stopColor: color }} />
               <stop offset="100%" style={{ stopColor: activeTone === 'ion' ? 'var(--color-champagne)' : color }} stopOpacity={0.75} />
             </linearGradient>
@@ -92,7 +93,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={`url(#ring-grad-${activeTone})`}
+            stroke={`url(#${gradientId})`}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}

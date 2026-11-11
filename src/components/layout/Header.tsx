@@ -17,7 +17,7 @@ const TAB_TITLES: Record<ActiveTab, string> = {
   about: 'About',
 };
 
-export const Header: React.FC<HeaderProps> = ({
+const HeaderView: React.FC<HeaderProps> = ({
   activeTab,
   theme,
   onThemeChange,
@@ -62,3 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
+HeaderView.displayName = 'Header';
+
+/** Title and theme control are independent of analysis loading/results state. */
+export const Header = React.memo(HeaderView);
