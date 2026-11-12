@@ -435,5 +435,282 @@ class OrchestrationTests(unittest.TestCase):
         self.assertNotIn("ai_insights", result)
 
 
+# ---------------------------------------------------------------------------
+# Normalisation and tokenisation regression tests
+# ---------------------------------------------------------------------------
+
+class TokenisationTests(unittest.TestCase):
+    def test_clean_text_is_idempotent(self):
+        source = "C++ / C# with .NET, Node.js, CI/CD, UI/UX -- React.JS!!"
+        once = clean_text(source)
+        self.assertEqual(clean_text(once), once)
+
+    def test_technical_terms_survive_as_single_tokens(self):
+        cleaned = clean_text("C++ C# .NET Node.js ASP.NET CI/CD UI/UX")
+        tokens = cleaned.split()
+        for expected in ("c++", "c#", "dotnet", "node.js", "asp.net", "ci", "cd", "ui", "ux"):
+            self.assertIn(expected, tokens)
+
+    def test_separator_punctuation_splits_words(self):
+        self.assertEqual(clean_text("full-stack front-end"), "full stack front end")
+        self.assertEqual(clean_text("data\r\n\tscience"), "data science")
+
+    def test_case_and_whitespace_variants_normalise_identically(self):
+        self.assertEqual(
+            clean_text("REACT.JS   ,   NODE.JS"),
+            clean_text("react.js, node.js"),
+        )
+
+    def test_typographic_quotes_and_dashes_are_folded(self):
+        self.assertEqual(clean_text("Node\u2019s \u2014 work"), "node s work")
+
+    def test_non_string_input_returns_empty_text(self):
+        self.assertEqual(clean_text(None), "")
+
+    def test_document_below_minimum_vocabulary_scores_zero(self):
+        self.assertEqual(calculate_tfidf_similarity("Python", "Python"), 0.0)
+
+    def test_repeated_keywords_do_not_inflate_similarity(self):
+        clean = (
+            "Skills Python Flask SQL Docker Git and three years of backend "
+            "experience building APIs."
+        )
+        stuffed = (
+            "Skills Python Python Python Flask Flask SQL SQL SQL Docker Docker "
+            "Git Git and three years of backend experience building APIs."
+        )
+        base = calculate_tfidf_similarity(clean, RELEVANT_JOB)
+        inflated = calculate_tfidf_similarity(stuffed, RELEVANT_JOB)
+        self.assertEqual(base, inflated)
+
+    def test_repeating_a_whole_document_does_not_increase_similarity(self):
+        once = calculate_tfidf_similarity(RELEVANT_RESUME, RELEVANT_JOB)
+        thrice = calculate_tfidf_similarity(" ".join([RELEVANT_RESUME] * 3), RELEVANT_JOB)
+        self.assertLessEqual(thrice, once)
+        self.assertGreater(thrice, once - 10.0)
+
+    def test_equivalent_formatting_scores_identically(self):
+        upper = calculate_tfidf_similarity(RELEVANT_RESUME.upper(), RELEVANT_JOB)
+        spaced = calculate_tfidf_similarity(
+            "   " + RELEVANT_RESUME.replace(". ", ".\n\n   ") + "   ",
+            RELEVANT_JOB,
+        )
+        base = calculate_tfidf_similarity(RELEVANT_RESUME, RELEVANT_JOB)
+        self.assertEqual(base, upper)
+        self.assertEqual(base, spaced)
+
+
+# ---------------------------------------------------------------------------
+# Multi-domain keyword recognition and false-positive guards
+# ---------------------------------------------------------------------------
+
+class MultiDomainKeywordTests(unittest.TestCase):
+    DOMAIN_JOBS = {
+        "software": (
+            "Python, Django, REST APIs, PostgreSQL, Docker, Git, AWS, Linux, unit testing.",
+            {"Python", "Django", "REST APIs", "PostgreSQL", "Docker", "Git", "AWS",
+             "Linux", "Unit Testing"},
+        ),
+        "marketing": (
+            "Own SEO, SEM, Google Ads, Meta Ads, Google Analytics, keyword research, "
+            "content marketing, email marketing, conversion rate optimization and lead "
+            "generation.",
+            {"SEO", "SEM & PPC", "Google Ads", "Meta Ads", "Google Analytics",
+             "Keyword Research", "Content Marketing", "Email Marketing",
+             "Conversion Rate Optimization", "Lead Generation"},
+        ),
+        "design": (
+            "Adobe Photoshop, Adobe Illustrator, Figma, Canva, branding, typography, "
+            "UI design, UX design, video editing and motion graphics.",
+            {"Adobe Photoshop", "Adobe Illustrator", "Figma", "Canva", "Branding",
+             "Typography", "UI/UX Design", "Video Editing", "Motion Graphics"},
+        ),
+        "business": (
+            "Project management, business development, strategic planning, client relations, "
+            "team management, negotiation, sales and CRM ownership.",
+            {"Project Management", "Business Development", "Strategic Planning",
+             "Client Relations", "Team Management", "Negotiation", "Sales", "CRM"},
+        ),
+        "data": (
+            "Advanced Excel, Power BI, Tableau, SQL, Python, statistics, data cleaning, "
+            "data visualization and reporting for stakeholders.",
+            {"Excel", "Power BI", "Tableau", "SQL", "Python", "Statistics",
+             "Data Cleaning", "Data Visualization", "Reporting"},
+        ),
+        "hr": (
+            "Recruitment, talent acquisition, onboarding, employee relations, payroll, "
+            "performance management and training and development.",
+            {"Recruitment", "Onboarding", "Employee Relations", "Payroll",
+             "Performance Management", "Training and Development"},
+        ),
+        "finance": (
+            "Accounting, bookkeeping, budgeting, financial reporting, auditing, taxation, "
+            "financial analysis and QuickBooks.",
+            {"Accounting", "Bookkeeping", "Budgeting", "Financial Reporting", "Auditing",
+             "Taxation", "Financial Analysis", "QuickBooks"},
+        ),
+    }
+
+    def test_every_domain_vocabulary_is_recognised(self):
+        for domain, (job, expected) in self.DOMAIN_JOBS.items():
+            with self.subTest(domain=domain):
+                # An empty resume puts every job keyword in the missing list,
+                # which shows exactly what the dictionary recognised.
+                job_keywords = {
+                    item["keyword"]
+                    for item in analyze_keywords("", job)["missing_keywords"]
+                }
+                undetected = expected - job_keywords
+                self.assertEqual(undetected, set(), f"{domain} keywords not detected: {undetected}")
+
+    def test_common_abbreviations_match_canonical_skills(self):
+        job = (
+            "JavaScript, React, Node.js, Machine Learning, SEO, CRO, CRM, Microsoft Excel, "
+            "Human Resources, Conversion Rate Optimization"
+        )
+        resume = "JS, ReactJS, Node, ML, SEO, CRO, CRM, MS Excel, HR, CRO"
+        result = analyze_keywords(resume, job)
+
+        self.assertEqual(result["missing_keywords"], [])
+        self.assertEqual(result["keyword_coverage"], 100.0)
+
+    def test_technical_terms_are_not_confused_with_each_other(self):
+        result = analyze_keywords("C# and .NET services", "C++ and .NET developer")
+        matched = {item["keyword"] for item in result["matched_keywords"]}
+        missing = {item["keyword"] for item in result["missing_keywords"]}
+
+        self.assertEqual(matched, {".NET"})
+        self.assertEqual(missing, {"C++"})
+
+    def test_java_does_not_match_javascript(self):
+        result = analyze_keywords("JavaScript developer", "Java developer required")
+        self.assertEqual({item["keyword"] for item in result["missing_keywords"]}, {"Java"})
+
+    def test_ambiguous_single_letters_are_not_skills(self):
+        result = analyze_keywords("Strong R and Python skills.", "R programming experience needed")
+        resume_keywords = {item["keyword"] for item in result["resume_keywords"]}
+        job_keywords = {item["keyword"] for item in result["resume_keywords"]} | {
+            item["keyword"] for item in result["missing_keywords"]
+        }
+        self.assertIn("R", job_keywords)
+        self.assertNotIn("R", resume_keywords)
+
+    def test_context_exclusions_block_boilerplate_false_positives(self):
+        cases = [
+            ("Accounting for 20 percent of revenue growth.", "Accounting"),
+            ("Reporting to the finance director each month.", "Reporting"),
+            ("Drive lead generation for the sales team.", "Sales"),
+            ("We are recruiting an Accountant for the finance team.", "Recruitment"),
+        ]
+        for text, blocked in cases:
+            with self.subTest(keyword=blocked):
+                detected = {
+                    item["keyword"]
+                    for item in analyze_keywords(text, text)["matched_keywords"]
+                }
+                self.assertNotIn(blocked, detected)
+
+    def test_sales_skill_still_matches_when_it_is_real_work(self):
+        text = "Owned sales targets and the sales pipeline for the region."
+        detected = {item["keyword"] for item in analyze_keywords(text, text)["matched_keywords"]}
+        self.assertIn("Sales", detected)
+
+    def test_kubernetes_node_is_not_nodejs(self):
+        text = "Scale a Kubernetes node pool and schedule pods on each worker node."
+        detected = {item["keyword"] for item in analyze_keywords(text, text)["matched_keywords"]}
+        self.assertIn("Kubernetes", detected)
+        self.assertNotIn("Node.js", detected)
+
+    def test_node_without_suffix_still_matches_nodejs(self):
+        text = "Backend engineer writing Node services and Express APIs."
+        detected = {item["keyword"] for item in analyze_keywords(text, text)["matched_keywords"]}
+        self.assertIn("Node.js", detected)
+
+    def test_short_words_are_not_matched_inside_longer_words(self):
+        text = "Excellent eye for detail, designed posters in Canvas."
+        detected = {item["keyword"] for item in analyze_keywords(text, text)["matched_keywords"]}
+        self.assertNotIn("Excel", detected)
+        self.assertNotIn("Canva", detected)
+
+    def test_no_duplicate_entries_or_shared_match_terms(self):
+        from nlp_engine import _keyword_terms
+
+        entries = _keyword_terms()
+        names = [name for name, *_ in entries]
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue(all(terms for _, _, terms, _, _ in entries))
+
+        owner = {}
+        duplicates = set()
+        for name, _category, terms, _after, _before in entries:
+            for term in terms:
+                if term in owner and owner[term] != name:
+                    duplicates.add(term)
+                owner[term] = name
+        self.assertEqual(duplicates, set(), f"terms shared by two entries: {duplicates}")
+
+
+# ---------------------------------------------------------------------------
+# End-to-end upload -> analyse workflow
+# ---------------------------------------------------------------------------
+
+class UploadWorkflowTests(unittest.TestCase):
+    JOB_DESCRIPTION = (
+        "We are hiring a Python developer with Flask, SQL, React and scikit-learn "
+        "experience to build internal tools for the data team."
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        app.config.update(TESTING=True)
+        cls.client = app.test_client()
+
+    def _analyse_upload(self, file_bytes, filename):
+        extraction = self.client.post(
+            "/api/extract-resume",
+            data={"file": (io.BytesIO(file_bytes), filename)},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(extraction.status_code, 200, extraction.get_json())
+
+        analysis = self.client.post(
+            "/api/analyze",
+            json={
+                "resume_text": extraction.get_json()["extracted_text"],
+                "job_description": self.JOB_DESCRIPTION,
+                "resume_title": filename,
+                "job_title": "Python Developer",
+            },
+        )
+        self.assertEqual(analysis.status_code, 200, analysis.get_json())
+        return analysis.get_json()
+
+    def test_docx_upload_to_results(self):
+        payload = self._analyse_upload(build_docx(), "resume.docx")
+        self.assertGreater(payload["match_percentage"], 0.0)
+        self.assertGreater(payload["keyword_coverage"], 0.0)
+        self.assertTrue(payload["matched_keywords"])
+        self.assertTrue(payload["suggestions"])
+
+    def test_pdf_upload_to_results(self):
+        payload = self._analyse_upload(build_pdf(), "resume.pdf")
+        self.assertGreater(payload["match_percentage"], 0.0)
+        self.assertTrue(payload["matched_keywords"])
+        self.assertIn("Python", {item["keyword"] for item in payload["matched_keywords"]})
+
+    def test_empty_documents_are_handled_without_crashing(self):
+        result = analyze_full("", "")
+        self.assertEqual(result["match_percentage"], 0.0)
+        self.assertEqual(result["keyword_coverage"], 0.0)
+        self.assertEqual(result["job_keyword_count"], 0)
+        self.assertTrue(result["suggestions"])
+
+        whitespace_only = analyze_full("   \n\t  ", self.JOB_DESCRIPTION)
+        self.assertEqual(whitespace_only["match_percentage"], 0.0)
+        self.assertEqual(whitespace_only["keyword_coverage"], 0.0)
+        self.assertGreater(whitespace_only["job_keyword_count"], 0)
+        self.assertEqual(whitespace_only["matched_keywords"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

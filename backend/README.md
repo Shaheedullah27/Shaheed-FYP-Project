@@ -66,7 +66,10 @@ Both texts must contain at least 10 words. The response contains:
 
 ## Design decisions
 
-- **Unigram TF-IDF** with English stop words and sublinear term frequency keeps the vector space small and the score explainable.
+- **Unigram TF-IDF** with English stop words and sublinear term frequency keeps the vector space small and the score explainable. Bigrams were measured against the same document pairs and lowered similarity for relevant matches without improving separation from unrelated text, so they are not used.
+- **Token-preserving normalisation** — one pass performs NFKC normalisation, folds typographic quotes/dashes, lower-cases, canonicalises `.NET` to `dotnet`, and keeps `+`, `#` and internal dots so `C++`, `C#` and `Node.js` reach the vectoriser as single tokens. Separators such as `/` and `-` split words, so `CI/CD` and `UI/UX` are matched through their word forms.
+- **Multi-domain vocabulary** — the dictionary covers software, data, cloud/DevOps, marketing, design, business/management, HR and finance, with aliases mapping shorthand such as `JS`, `ML`, `MS Excel`, `SEM`, `CRO` and `HR` onto one canonical keyword.
+- **Guarded matches** — `terms` overrides keep ambiguous display names (`Go (Golang)`, `R`) from matching ordinary words, while `exclude_after` / `exclude_before` block boilerplate such as "accounting for", "reporting to", "sales team" and "kubernetes node".
 - **Whole-keyword lookarounds** prevent `Java` matching `JavaScript` and keep `C++`, `C#` and `.NET` working.
 - **Canonical keyword deduplication** means repeated mentions or multiple aliases count once in coverage.
 - **Zero-division guard** returns `0.0` coverage when the posting has no dictionary keywords.
@@ -93,3 +96,5 @@ The tests build real PDF and DOCX fixtures in memory, so parser coverage is exer
 - Image-only/scanned PDFs need OCR, which is out of scope; the API returns a readable error.
 - TF-IDF cannot understand synonyms outside the dictionary or judge experience quality.
 - Keyword coverage is not an official ATS score.
+- Single-letter skill names are matched only in an explicit form (`R programming`, `RStudio`); a bare `R` in a skills list is ignored to avoid matching the English word.
+- Normalisation targets Latin text. A resume written entirely in another script produces no tokens and scores `0.0`.
