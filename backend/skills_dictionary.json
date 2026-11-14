@@ -3,20 +3,22 @@
   "Programming Languages": [
     { "name": "Python", "aliases": ["python3", "python 3"] },
     { "name": "JavaScript", "aliases": ["js", "ecmascript", "java script"] },
-    { "name": "TypeScript", "aliases": ["ts", "type script"] },
+    { "name": "TypeScript", "aliases": ["ts", "type script"], "exclude_after": ["sci"] },
     { "name": "Java", "aliases": ["core java"] },
     { "name": "C++", "aliases": ["cpp", "c plus plus"] },
     { "name": "C#", "aliases": ["csharp", "c sharp"] },
     { "name": "Go (Golang)", "aliases": [], "terms": ["golang", "go lang", "go programming"] },
-    { "name": "Rust", "aliases": [] },
+    { "name": "Rust", "aliases": [], "exclude_after": ["prevention", "removal", "proof", "proofing", "resistant", "treatment", "stains", "colored", "coloured"], "exclude_before": ["prevent", "prevents", "preventing", "remove", "removing", "treat", "treating", "anti", "against"] },
     { "name": "PHP", "aliases": [] },
     { "name": "Ruby", "aliases": [] },
-    { "name": "Swift", "aliases": [] },
+    { "name": "Swift", "aliases": [], "exclude_after": ["delivery", "response", "action", "resolution", "turnaround", "execution", "progress", "decision", "support", "completion", "reply", "processing", "onboarding", "results", "service", "payment", "payments"], "exclude_before": ["very", "so", "extremely", "quite", "remarkably", "surprisingly", "reasonably", "relatively", "fairly", "incredibly"] },
     { "name": "Kotlin", "aliases": [] },
     { "name": "R", "aliases": [], "terms": ["r programming", "r language", "rstudio", "r lang"] },
     { "name": "Bash", "aliases": ["shell scripting", "shell script", "shell scripts"] },
     { "name": "Scala", "aliases": [] },
-    { "name": "MATLAB", "aliases": [] }
+    { "name": "MATLAB", "aliases": [] },
+    { "name": "Object-Oriented Programming", "aliases": ["oop", "object oriented programming", "object oriented design"] },
+    { "name": "Data Structures & Algorithms", "aliases": ["data structures", "algorithms", "dsa"] }
   ],
   "Databases & Storage": [
     { "name": "SQL", "aliases": ["structured query language", "sql server", "t-sql", "tsql", "transact sql"] },
@@ -31,9 +33,9 @@
     { "name": "Oracle Database", "aliases": ["pl/sql", "oracle sql"] }
   ],
   "Web Development": [
-    { "name": "React", "aliases": ["reactjs", "react.js", "react js"] },
-    { "name": "Node.js", "aliases": ["nodejs", "node js", "node"], "exclude_before": ["kubernetes", "k8s", "worker", "workers", "network", "cluster", "parent", "child", "leaf"], "exclude_after": ["pool", "pools", "cluster", "clusters", "affinity", "network"] },
-    { "name": "Express.js", "aliases": ["express", "expressjs", "express js"] },
+    { "name": "React", "aliases": ["reactjs", "react.js", "react js"], "exclude_after": ["to", "quickly", "promptly", "swiftly", "rapidly", "calmly", "positively", "negatively", "appropriately", "immediately", "fast", "well"] },
+    { "name": "Node.js", "aliases": ["nodejs", "node js", "node"], "exclude_before": ["kubernetes", "k8s", "worker", "workers", "network", "cluster", "parent", "child", "leaf"], "exclude_after": ["pool", "pools", "cluster", "clusters", "affinity", "network", "s"] },
+    { "name": "Express.js", "aliases": ["express", "expressjs", "express js"], "exclude_after": ["interest", "yourself", "ideas", "views", "opinions", "concerns", "gratitude", "thanks", "sympathy", "delight", "appreciation", "regret", "condolences", "clearly", "freely", "delivery", "shipping", "service", "lane", "train"] },
     { "name": "HTML5", "aliases": ["html", "html 5"] },
     { "name": "CSS3", "aliases": ["css", "scss", "sass", "css 3"] },
     { "name": "Next.js", "aliases": ["nextjs", "next js"] },
@@ -43,16 +45,17 @@
     { "name": "Flask", "aliases": [] },
     { "name": "FastAPI", "aliases": ["fast api"] },
     { "name": "Tailwind CSS", "aliases": ["tailwind", "tailwindcss"] },
-    { "name": "REST APIs", "aliases": ["restful api", "rest api", "restful apis", "rest apis", "web apis"] },
+    { "name": "REST APIs", "aliases": ["restful api", "rest api", "restful apis", "rest apis", "web apis", "restful"] },
     { "name": "GraphQL", "aliases": [] },
     { "name": "Redux", "aliases": [] },
     { "name": "Vite", "aliases": [] },
     { "name": "Webpack", "aliases": [] },
     { "name": "Microservices", "aliases": ["microservice", "microservice architecture", "microservices architecture"] },
-    { "name": ".NET", "aliases": ["dotnet", "dot net", "asp.net", "asp.net core", "net core", "dotnet core", "net framework"] }
+    { "name": ".NET", "aliases": ["dotnet", "dot net", "asp.net", "asp.net core", "net core", "dotnet core", "net framework"] },
+    { "name": "WordPress", "aliases": ["wordpress cms"] }
   ],
   "Data Science & Machine Learning": [
-    { "name": "Machine Learning", "aliases": ["ml"] },
+    { "name": "Machine Learning", "aliases": ["ml"], "exclude_after": ["of", "per"] },
     { "name": "Natural Language Processing", "aliases": ["nlp"] },
     { "name": "Scikit-learn", "aliases": ["sklearn", "scikit learn"] },
     { "name": "TensorFlow", "aliases": [] },
@@ -91,15 +94,19 @@
     { "name": "Postman", "aliases": [] }
   ],
   "Data & Analytics": [
-    { "name": "Excel", "aliases": ["microsoft excel", "ms excel", "advanced excel", "excel modelling", "excel modeling", "spreadsheets"] },
+    { "name": "Excel", "aliases": ["microsoft excel", "ms excel", "advanced excel", "excel modelling", "excel modeling", "spreadsheets"], "exclude_after": ["at", "in", "on", "across"] },
     { "name": "Power BI", "aliases": ["powerbi", "power bi"] },
     { "name": "Tableau", "aliases": [] },
     { "name": "Data Visualization", "aliases": ["visualization", "data visualisation", "visualisation", "visualisations", "visualizations"] },
     { "name": "Statistics", "aliases": ["statistical analysis", "statistical modeling", "statistical modelling", "quantitative analysis"] },
-    { "name": "Data Cleaning", "aliases": ["data cleansing", "data wrangling", "data preparation", "data quality"] },
+    { "name": "Data Cleaning", "aliases": ["data cleansing", "data wrangling", "data preparation", "data quality", "clean data", "cleaned data", "cleaning data"] },
     { "name": "Reporting", "aliases": ["reports", "report generation", "dashboards", "dashboarding", "dashboard"], "exclude_after": ["to", "line", "structure", "period"] },
     { "name": "Data Analysis", "aliases": ["data analytics", "exploratory data analysis", "eda"] },
-    { "name": "Data Modeling", "aliases": ["data models", "data modelling", "dimensional modeling", "dimensional modelling"] }
+    { "name": "Data Modeling", "aliases": ["data models", "data modelling", "dimensional modeling", "dimensional modelling"] },
+    { "name": "ETL", "aliases": ["etl pipeline", "etl pipelines", "extract transform load"] },
+    { "name": "Snowflake", "aliases": [] },
+    { "name": "BigQuery", "aliases": ["big query", "google bigquery"] },
+    { "name": "Google Sheets", "aliases": ["google sheet"] }
   ],
   "Marketing & Analytics": [
     { "name": "SEO", "aliases": ["search engine optimization", "search engine optimisation", "on-page seo", "on page seo", "technical seo"] },
@@ -115,8 +122,11 @@
     { "name": "Conversion Rate Optimization", "aliases": ["cro", "conversion optimization", "conversion optimisation", "conversion rate optimisation", "a/b testing", "ab testing"] },
     { "name": "Lead Generation", "aliases": ["lead gen", "lead nurturing", "demand generation", "lead qualification"] },
     { "name": "Marketing Strategy", "aliases": ["marketing plan", "marketing planning", "marketing strategies"] },
-    { "name": "Campaign Management", "aliases": ["campaign planning", "campaign execution", "campaign delivery"] },
-    { "name": "Market Research", "aliases": ["competitive analysis", "market analysis", "consumer research", "user research"] }
+    { "name": "Campaign Management", "aliases": ["campaign planning", "campaign execution", "campaign delivery", "campaign performance", "campaign optimization", "campaign optimisation"] },
+    { "name": "Market Research", "aliases": ["competitive analysis", "market analysis", "consumer research", "user research"] },
+    { "name": "Marketing Automation", "aliases": ["marketo", "pardot"] },
+    { "name": "Google Search Console", "aliases": ["search console"] },
+    { "name": "Shopify", "aliases": ["shopify store"] }
   ],
   "Design & Creative": [
     { "name": "Figma", "aliases": [] },
@@ -126,8 +136,9 @@
     { "name": "Adobe XD", "aliases": ["adobe xd"] },
     { "name": "Adobe Photoshop", "aliases": ["photoshop"] },
     { "name": "Adobe Illustrator", "aliases": ["illustrator"] },
+    { "name": "Adobe InDesign", "aliases": ["indesign"] },
     { "name": "Canva", "aliases": [] },
-    { "name": "Branding", "aliases": ["brand identity", "brand strategy", "brand guidelines", "brand design"] },
+    { "name": "Branding", "aliases": ["brand identity", "brand identities", "visual identity", "brand strategy", "brand guidelines", "brand design"] },
     { "name": "Typography", "aliases": ["typographic", "type hierarchy", "typesetting"] },
     { "name": "Motion Graphics", "aliases": ["motion design", "after effects", "adobe after effects"] },
     { "name": "Video Editing", "aliases": ["premiere pro", "adobe premiere", "final cut pro"] }
@@ -150,7 +161,11 @@
     { "name": "Product Roadmap", "aliases": ["roadmap planning", "feature prioritization", "feature prioritisation"] },
     { "name": "PMP", "aliases": ["project management professional"] },
     { "name": "Confluence", "aliases": [] },
-    { "name": "Trello", "aliases": [] }
+    { "name": "Trello", "aliases": [] },
+    { "name": "Microsoft Office", "aliases": ["ms office", "office 365", "microsoft 365", "office suite"] },
+    { "name": "ERP", "aliases": ["enterprise resource planning", "erp system", "erp systems"], "exclude_before": ["tally"] },
+    { "name": "KPI Tracking", "aliases": ["kpi", "kpis", "key performance indicator", "key performance indicators"] },
+    { "name": "Forecasting", "aliases": ["forecast", "forecasts", "demand forecasting", "revenue forecasting"] }
   ],
   "Communication & Interpersonal": [
     { "name": "Communication", "aliases": ["written communication", "verbal communication", "communication skills", "communicate", "communicating", "business writing"] },
@@ -167,11 +182,12 @@
   "Human Resources": [
     { "name": "Recruitment", "aliases": ["recruited", "recruiter", "talent acquisition", "talent sourcing"] },
     { "name": "Employee Relations", "aliases": ["employee relation", "labour relations", "labor relations"] },
-    { "name": "Human Resources", "aliases": ["hr", "human resource", "hr management", "human resource management", "people operations", "hr operations"] },
+    { "name": "Human Resources", "aliases": ["hr", "human resource", "hr management", "human resource management", "people operations", "hr operations"], "exclude_after": ["shift", "shifts", "day", "days", "week", "weeks", "per"] },
     { "name": "Payroll", "aliases": ["payroll processing", "payroll administration"] },
     { "name": "Performance Management", "aliases": ["performance reviews", "performance appraisal", "performance appraisals"] },
     { "name": "Training and Development", "aliases": ["learning and development", "training programmes", "training programs", "staff training", "employee training"] },
-    { "name": "Onboarding", "aliases": ["employee onboarding", "new hire onboarding"] }
+    { "name": "Onboarding", "aliases": ["employee onboarding", "new hire onboarding"] },
+    { "name": "HRIS", "aliases": ["human resources information system", "hr information system", "hris systems"] }
   ],
   "Finance & Accounting": [
     { "name": "Accounting", "aliases": ["accountant", "accountancy"], "exclude_after": ["for"] },
@@ -181,6 +197,15 @@
     { "name": "Financial Analysis", "aliases": ["financial modeling", "financial modelling", "variance analysis", "margin analysis"] },
     { "name": "Auditing", "aliases": ["internal audit", "external audit", "annual audit", "statutory audit"] },
     { "name": "Taxation", "aliases": ["tax", "taxes", "tax returns", "tax filing", "vat returns"] },
-    { "name": "QuickBooks", "aliases": ["quick books"] }
+    { "name": "QuickBooks", "aliases": ["quick books"] },
+    { "name": "Accounts Payable", "aliases": ["account payable", "payable", "payables"] },
+    { "name": "Accounts Receivable", "aliases": ["account receivable", "receivable", "receivables"] },
+    { "name": "Bank Reconciliation", "aliases": ["bank reconciliations"] },
+    { "name": "General Ledger", "aliases": ["ledger management"] },
+    { "name": "IFRS", "aliases": ["international financial reporting standards"] },
+    { "name": "GAAP", "aliases": ["generally accepted accounting principles", "us gaap"] },
+    { "name": "SAP", "aliases": ["sap fico", "sap erp"] },
+    { "name": "Tally", "terms": ["tally erp", "tally prime", "tally software"] },
+    { "name": "Xero", "aliases": [] }
   ]
 }
