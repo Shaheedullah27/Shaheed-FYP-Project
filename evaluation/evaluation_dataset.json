@@ -1,0 +1,60 @@
+{
+  "name": "ResumeMatch Independent Evaluation Dataset",
+  "version": "1.0.0",
+  "created": "2026-11-15",
+  "description": "Seventy resume/job-description pairs across seven professional domains, labelled by a human annotator independently of the ResumeMatch engine. Labels were written from the document text before the engine was run, and the engine is never used to produce or repair a label.",
+  "synthetic": true,
+  "synthetic_statement": "All resumes and job descriptions in this dataset are synthetic examples written for evaluation. They are not scraped vacancies, real applicants, or hiring outcomes, and they do not represent the job market. They are realistic in structure and vocabulary but were created to exercise the documented behaviours of the system.",
+  "annotator": "Single annotator: the AI coding assistant drafted the labels from the document text under the project author's direction. No independent human annotator was available, and the project author has not yet re-annotated the labels.",
+  "annotation_independence": "Labels were drafted from reading each posting and applying the annotation policy below, before the evaluation harness was run against them. The engine was not used to generate, repair or validate a label. The assistant had read the engine and dictionary while building the dataset, so this is independence from engine predictions, not independence from knowledge of the implementation.",
+  "second_review": "Not performed. No human second reviewer was available, so no inter-annotator agreement statistic can be reported and the labels should be treated as AI-drafted until a human audit is completed. The harness does perform mechanical label-integrity checks (requirements = matched + missing, group membership, evidence keys, unique IDs, domain counts), but these are not a second human review.",
+  "annotation_date": "2026-11-15",
+  "revision_notes": [
+    "After the first harness run, some documents were lengthened and a few out-of-dictionary requirements were added so that short/medium/long length buckets and the dictionary ceiling were covered. No expected matched or missing label was changed, and no requirement was added to make a system prediction correct."
+  ],
+  "dictionary_entries_at_annotation": 182,
+  "domains": [
+    {"name": "Software Development", "file": "dataset/01_software_development.json", "pairs": 10},
+    {"name": "Digital Marketing", "file": "dataset/02_digital_marketing.json", "pairs": 10},
+    {"name": "Graphic Design / UI-UX", "file": "dataset/03_graphic_design_uiux.json", "pairs": 10},
+    {"name": "Data Analysis", "file": "dataset/04_data_analysis.json", "pairs": 10},
+    {"name": "Human Resources", "file": "dataset/05_human_resources.json", "pairs": 10},
+    {"name": "Finance / Accounting", "file": "dataset/06_finance_accounting.json", "pairs": 10},
+    {"name": "Business & Administration", "file": "dataset/07_business_administration.json", "pairs": 10}
+  ],
+  "totals": {
+    "domains": 7,
+    "pairs": 70
+  },
+  "annotation_policy": [
+    "A dictionary term is an expected job requirement when the posting asks the candidate for that capability, names it as required/preferred/optional, or describes a core duty that clearly needs it.",
+    "A term named only as company context, a negation, or incidental prose unrelated to what the candidate must bring is excluded or recorded as ambiguous.",
+    "Terms that a human reader would consider requirements but that lie outside the 182-entry dictionary are recorded under unmeasured_requirements and excluded from keyword metrics; they are reported separately as a measurement limit.",
+    "A term whose requirement status is genuinely unclear is recorded under ambiguous and excluded from all metrics rather than forced into matched or missing.",
+    "Two alternatives joined by exactly 'or' (A or B) are one logical requirement. The group is a single label ('A or B'); individual alternatives are not separate requirements.",
+    "Repetition of a term in either document never creates additional requirements.",
+    "A resume mention is evidence only when it reads as genuine experience. Homographs, negated mentions, learning-only mentions and unrelated uses are not evidence.",
+    "Requirement importance (required / preferred / optional) does not change the requirement set: coverage in the existing system counts all recognised job requirements."
+  ],
+  "label_fields": {
+    "expected_requirements": "Logical requirements a human annotator sees in the posting, using canonical dictionary names. An alternative group appears as one 'A or B' label.",
+    "expected_matched": "Requirements the annotated resume genuinely evidences.",
+    "expected_missing": "Requirements the annotated resume does not evidence.",
+    "expected_alternative_groups": "Groups with their member terms and whether the resume satisfies the group.",
+    "expected_excluded": "Terms that must not count as job requirements (for example, explicitly negated in the posting), with the source and reason.",
+    "resume_negated_terms": "Terms the resume negates, so they must not count as matched evidence.",
+    "ambiguous": "Terms excluded from metrics because the annotation itself is genuinely uncertain.",
+    "unmeasured_requirements": "Human-identified requirements outside the dictionary; excluded from keyword metrics and from expected_count so that the count metric stays dictionary-scoped. They are reported separately as the dictionary ceiling.",
+    "evidence": "Short quoted or paraphrased evidence for every expected matched requirement.",
+    "expected_count": "Number of logical dictionary-representable requirements, with each alternative group counted once. Out-of-dictionary requirements are listed separately and are not included here."
+  },
+  "known_dataset_limitations": [
+    "Seventy synthetic pairs are sufficient for a transparent course-project benchmark, not for claims about the labour market or universal ATS accuracy.",
+    "The labels are single-annotator. No inter-annotator agreement statistic can be reported.",
+    "Labels use canonical dictionary names so that keyword-level comparison is possible; this makes dictionary coverage part of the evaluation boundary.",
+    "Some labels deliberately test edge cases (negation, context traps, alternatives, learning-only mentions) and are not a random sample of postings.",
+    "The dataset is small enough that one pair can move a domain percentage by several points.",
+    "Nine human-identified requirements (for example Storybook, Airflow, Workday, Anaplan) are outside the dictionary. They are recorded per pair as unmeasured_requirements and are excluded from keyword metrics; the report shows the resulting dictionary ceiling separately.",
+    "The dataset intentionally includes dictionary-consistent vocabulary so that keyword-level labels can be compared. This makes the detection figures optimistic relative to an unrestricted crawl of real postings."
+  ]
+}

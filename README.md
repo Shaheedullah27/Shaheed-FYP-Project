@@ -359,7 +359,8 @@ The suite covers:
 - the unchanged `/api/analyze` response contract;
 - invalid and empty uploads;
 - empty job description validation;
-- API health and structured analysis responses.
+- API health and structured analysis responses;
+- the independent evaluation dataset contract and metric arithmetic.
 
 ### Frontend
 
@@ -369,6 +370,22 @@ npm run build
 ```
 
 `npm run lint` runs `tsc --noEmit` with `strict`, `noUnusedLocals` and `noUnusedParameters` enabled. `npm test` runs the backend unittest suite using the active Python environment.
+
+### Offline evaluation benchmark
+
+An offline harness in [`evaluation/`](evaluation/) measures the unchanged pipeline against 70 synthetic resume/job pairs, 10 per supported domain. The labels were recorded before the harness was run, without using engine predictions. It calls the real analysis function, compares predictions with those labels, and writes `evaluation_results.json` and `evaluation_report.md`.
+
+```bash
+backend/venv/Scripts/python.exe evaluation/evaluation_runner.py
+```
+
+| Layer | Precision | Recall | F1 |
+| :-- | --: | --: | --: |
+| Requirement detection (dictionary-scoped) | 98.4% | 100.0% | 99.2% |
+| Matched-skill identification | 97.8% | 97.0% | 97.4% |
+| Missing-skill identification | 89.0% | 97.3% | 93.0% |
+
+Requirement counts were exact in 65 of 70 pairs; all 11 labelled alternative groups and 9 labelled negation units were handled as annotated. These figures are dictionary-scoped over 309 annotated requirements. Nine labelled requirements fall outside the dictionary, so the end-to-end matched recall including them is 93.4%. The dataset is synthetic and was labelled by the AI coding assistant, with no independent human second review; it is not a sample of the job market, and the TF-IDF similarity percentage is not an accuracy measure. Methodology, domain results and error analysis are in [`evaluation/README.md`](evaluation/README.md).
 
 ---
 
@@ -383,6 +400,7 @@ npm run build
 - Context guards are shallow, not grammatical analysis. Negation handles lists, contractions, `without`, positive idioms, comma-separated `... are not required` lists and a two-item `A or B ... are not required` pair in a posting, but not long-distance references or a negated subordinate clause ("not sure I would say I know Python"). Homographs are handled by fixed exclusion lists.
 - Coverage measures presence, not depth. A keyword in a skills list counts the same as one supported by a project example; the weak-evidence suggestions only approximate the difference from wording, basic/familiar cues, stated years and repetition.
 - The match percentage does not assess seniority, quality, truthfulness or hiring likelihood.
+- The evaluation benchmark is small and synthetic, and its labels were AI-drafted rather than independently human-annotated, so no inter-annotator agreement is claimed. Its dictionary-scoped recall is optimistic because labels use canonical dictionary names, and presence-based matching can still credit a learning-only mention or a job title. The results describe this implementation on this dataset, not the job market or an official ATS.
 
 ---
 

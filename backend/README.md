@@ -115,7 +115,16 @@ On Windows:
 .\backend\venv\Scripts\python.exe -m unittest discover -s backend\tests -v
 ```
 
-The tests build real PDF and DOCX fixtures in memory, so parser coverage is exercised without committing binary sample files. They include negated lists and clauses, positive exceptions, negated job requirements, `A or B` alternatives with one, both and neither side evidenced (including duplicate mentions, evidence in different resume sections and negated alternatives), requirement cues, basic/familiar evidence, hyphen-split PDF and DOCX text, aliases versus non-equivalent related technologies, and the unchanged API shape.
+The tests build real PDF and DOCX fixtures in memory, so parser coverage is exercised without committing binary sample files. They include negated lists and clauses, positive exceptions, negated job requirements, `A or B` alternatives with one, both and neither side evidenced (including duplicate mentions, evidence in different resume sections and negated alternatives), requirement cues, basic/familiar evidence, hyphen-split PDF and DOCX text, aliases versus non-equivalent related technologies, and the unchanged API shape. `tests/test_evaluation.py` additionally checks the labelled evaluation dataset's contract and the harness metric arithmetic; the dataset itself lives in [`../evaluation/`](../evaluation/README.md).
+
+The evaluation harness is offline and is not imported by the application:
+
+```bash
+# from the project root
+backend/venv/Scripts/python.exe evaluation/evaluation_runner.py
+```
+
+It calls `analyze_full` directly, so any engine change is reflected in the next evaluation run. Do not tune the dictionary or scoring to raise those scores; the harness is a measurement, not a target.
 
 ## Limitations
 

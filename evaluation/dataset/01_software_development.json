@@ -1,0 +1,277 @@
+{
+  "domain": "Software Development",
+  "pairs": [
+    {
+      "id": "SD-01",
+      "domain": "Software Development",
+      "job_title": "Junior Backend Developer",
+      "seniority": "Junior",
+      "match_strength": "strong",
+      "resume_style": "bullet list",
+      "resume": "Junior Python developer.\n- Built and documented REST APIs with Flask.\n- Wrote SQL queries and migrations for a PostgreSQL side project.\n- Used Git daily in a team of four.\n- Containerised the app with Docker for deployment.\n- Wrote unit tests for the API layer and fixed defects reported by support.\n- Paired with two engineers on query tuning and database migrations.\n- Automated a weekly export that saved the team two hours.\n- Presented a short demo of the API to the product team.\nSelected projects: helped migrate an internal service to a new host, wrote the runbook and handover notes, and stayed on call during the first release week. Earlier, I built a small command-line tool that cleaned duplicate customer records; the support team still uses it. Outside work, I volunteer with a local coding club and help beginners with their first projects. I also keep a small personal blog about process improvement and tools I am learning.",
+      "job_description": "We are hiring a junior backend developer. Required: Python, SQL and REST APIs. You will work with Git and Flask. Docker experience is preferred. Kubernetes is not required for this role.",
+      "expected_requirements": ["Python", "SQL", "REST APIs", "Git", "Flask", "Docker"],
+      "expected_matched": ["Python", "SQL", "REST APIs", "Git", "Flask", "Docker"],
+      "expected_missing": [],
+      "expected_alternative_groups": [],
+      "expected_excluded": [
+        {"term": "Kubernetes", "source": "job_description", "reason": "the posting explicitly says Kubernetes is not required"}
+      ],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Python": "Junior Python developer",
+        "SQL": "Wrote SQL queries",
+        "REST APIs": "Built and documented REST APIs",
+        "Git": "Used Git daily",
+        "Flask": "with Flask",
+        "Docker": "Containerised the app with Docker"
+      },
+      "expected_count": 6,
+      "notes": "PostgreSQL appears only in the resume, so it is resume evidence but not a job requirement."
+    },
+    {
+      "id": "SD-02",
+      "domain": "Software Development",
+      "job_title": "Frontend Engineer",
+      "seniority": "Mid",
+      "match_strength": "strong",
+      "resume_style": "prose",
+      "resume": "Frontend developer with React and TypeScript experience. Built responsive interfaces in HTML5 and CSS3, integrated REST APIs, and maintained a shared component library. Also wrote unit tests with Jest.",
+      "job_description": "Frontend engineer needed. Experience with React or Angular is required, together with TypeScript, HTML5, CSS3 and REST APIs. You will build components and integrate APIs. You will work with designers and backend engineers, review pull requests and help shape our component standards. Storybook experience is a plus. This is a full-time role based in our Lahore office, with two remote days each week. We offer a learning budget, health cover and a yearly team offsite. Our interview process includes a short screening call and one team interview. We review applications every Monday.",
+      "expected_requirements": ["React or Angular", "TypeScript", "HTML5", "CSS3", "REST APIs"],
+      "expected_matched": ["React or Angular", "TypeScript", "HTML5", "CSS3", "REST APIs"],
+      "expected_missing": [],
+      "expected_alternative_groups": [
+        {"label": "React or Angular", "members": ["React", "Angular"], "satisfied": true}
+      ],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": ["Storybook"],
+      "evidence": {
+        "React or Angular": "React and TypeScript experience",
+        "TypeScript": "React and TypeScript experience",
+        "HTML5": "responsive interfaces in HTML5",
+        "CSS3": "responsive interfaces in HTML5 and CSS3",
+        "REST APIs": "integrated REST APIs"
+      },
+      "expected_count": 5,
+      "notes": "One alternative is evidenced, so the group is one satisfied requirement."
+    },
+    {
+      "id": "SD-03",
+      "domain": "Software Development",
+      "job_title": "Full Stack Developer",
+      "seniority": "Mid",
+      "match_strength": "moderate",
+      "resume_style": "prose",
+      "resume": "Full stack developer. Built internal tools with Python and Flask, backed by PostgreSQL. Shipped React front ends that consume REST APIs. Familiar with AWS Lambda deployments.",
+      "job_description": "Full stack developer with Python and Django or Flask experience. PostgreSQL and Docker are required. AWS is preferred. You will ship features across React and REST APIs. You will join a team of eight engineers, partner with product and design on requirements, write documentation for each service and support weekly releases. The role sits with the engineering manager and offers two remote days each week. Our hiring process includes a short screening call, a practical exercise and one team interview. We review applications every Monday and aim to reply within two weeks. We offer health cover, a yearly team offsite and two remote days each week. The office is close to public transport.",
+      "expected_requirements": ["Python", "Django or Flask", "PostgreSQL", "Docker", "AWS", "React", "REST APIs"],
+      "expected_matched": ["Python", "Django or Flask", "PostgreSQL", "AWS", "React", "REST APIs"],
+      "expected_missing": ["Docker"],
+      "expected_alternative_groups": [
+        {"label": "Django or Flask", "members": ["Django", "Flask"], "satisfied": true}
+      ],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Python": "tools with Python and Flask",
+        "Django or Flask": "built internal tools with Python and Flask",
+        "PostgreSQL": "backed by PostgreSQL",
+        "AWS": "AWS Lambda deployments",
+        "React": "Shipped React front ends",
+        "REST APIs": "consume REST APIs"
+      },
+      "expected_count": 7,
+      "notes": "Docker is required and absent from the resume."
+    },
+    {
+      "id": "SD-04",
+      "domain": "Software Development",
+      "job_title": "Senior DevOps Engineer",
+      "seniority": "Senior",
+      "match_strength": "weak",
+      "resume_style": "prose",
+      "resume": "IT support specialist with Linux desktop administration experience. Handled password resets, hardware troubleshooting and user onboarding. Completed a short Git course. Supported 400 staff across three offices, documented repeat fixes and trained new starters on the ticketing system. Wrote scripts to automate account setup and kept an inventory of loan laptops.\nSelected projects: coordinated a hardware refresh across two floors, kept the delivery checklist current and walked colleagues through the new sign-in process. I enjoy documenting repeat fixes so the next person has an easier time. References are available on request.",
+      "job_description": "Senior DevOps engineer. Required: Kubernetes, Terraform, AWS, CI/CD, Linux and Prometheus. Experience with Helm is a plus.",
+      "expected_requirements": ["Kubernetes", "Terraform", "AWS", "CI/CD", "Linux", "Prometheus", "Helm"],
+      "expected_matched": ["Linux"],
+      "expected_missing": ["Kubernetes", "Terraform", "AWS", "CI/CD", "Prometheus", "Helm"],
+      "expected_alternative_groups": [],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Linux": "Linux desktop administration"
+      },
+      "expected_count": 7,
+      "notes": "Only Linux overlaps. Git is resume evidence but is not requested by the posting."
+    },
+    {
+      "id": "SD-05",
+      "domain": "Software Development",
+      "job_title": "QA Automation Engineer",
+      "seniority": "Mid",
+      "match_strength": "strong",
+      "resume_style": "prose",
+      "resume": "QA engineer with four years of automation experience. Built Selenium suites, wrote unit tests with pytest and ran integration tests in CI. Used Postman for API checks and Cypress for end-to-end browser tests. Selected projects: introduced a smoke-test checklist for each release, reviewed failures with developers and kept a weekly quality summary for the team lead.",
+      "job_description": "QA automation engineer. Required: Selenium, Cypress, Unit Testing, Integration Testing and Postman. You will maintain automated regression suites.",
+      "expected_requirements": ["Selenium", "Cypress", "Unit Testing", "Integration Testing", "Postman"],
+      "expected_matched": ["Selenium", "Cypress", "Unit Testing", "Integration Testing", "Postman"],
+      "expected_missing": [],
+      "expected_alternative_groups": [],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Selenium": "Built Selenium suites",
+        "Cypress": "Cypress for end-to-end browser tests",
+        "Unit Testing": "wrote unit tests with pytest",
+        "Integration Testing": "ran integration tests",
+        "Postman": "Used Postman"
+      },
+      "expected_count": 5,
+      "notes": "All five requirements are explicitly evidenced."
+    },
+    {
+      "id": "SD-06",
+      "domain": "Software Development",
+      "job_title": "Mobile Developer",
+      "seniority": "Mid",
+      "match_strength": "moderate",
+      "resume_style": "prose",
+      "resume": "Android developer with Kotlin experience. Built screens that consume REST APIs and contributed through Git pull requests. I have no Swift experience but I am eager to learn iOS development.",
+      "job_description": "Mobile developer. Required: Kotlin and Swift. You will build features against REST APIs and work with our Git workflow.",
+      "expected_requirements": ["Kotlin", "Swift", "REST APIs", "Git"],
+      "expected_matched": ["Kotlin", "REST APIs", "Git"],
+      "expected_missing": ["Swift"],
+      "expected_alternative_groups": [],
+      "expected_excluded": [],
+      "resume_negated_terms": [
+        {"term": "Swift", "reason": "resume says there is no Swift experience"}
+      ],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Kotlin": "Android developer with Kotlin experience",
+        "REST APIs": "screens that consume REST APIs",
+        "Git": "Git pull requests"
+      },
+      "expected_count": 4,
+      "notes": "Kotlin and Swift are joined by 'and', so they are two independent requirements."
+    },
+    {
+      "id": "SD-07",
+      "domain": "Software Development",
+      "job_title": "Data Platform Engineer",
+      "seniority": "Mid",
+      "match_strength": "strong",
+      "resume_style": "prose",
+      "resume": "Backend engineer working on data pipelines. Wrote Python jobs and complex SQL, built ETL processes into our warehouse and deployed services on AWS. Gained exposure to Snowflake during a warehouse migration. Selected projects: rebuilt a nightly load that had been timing out, documented the failure modes and handed the runbook to the platform team.",
+      "job_description": "Data platform engineer. Required: Python, SQL, ETL and Snowflake. AWS experience is preferred. Airflow orchestration is a plus. You will join a team of six and work with product and commercial colleagues on the warehouse migration. This is a full-time role with two remote days each week and a yearly team offsite.",
+      "expected_requirements": ["Python", "SQL", "ETL", "Snowflake", "AWS"],
+      "expected_matched": ["Python", "SQL", "ETL", "Snowflake", "AWS"],
+      "expected_missing": [],
+      "expected_alternative_groups": [],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": ["Airflow"],
+      "evidence": {
+        "Python": "Wrote Python jobs",
+        "SQL": "complex SQL",
+        "ETL": "built ETL processes",
+        "Snowflake": "exposure to Snowflake",
+        "AWS": "deployed services on AWS"
+      },
+      "expected_count": 5,
+      "notes": "Airflow is a human-readable requirement, but it is outside the current dictionary and is excluded from keyword metrics."
+    },
+    {
+      "id": "SD-08",
+      "domain": "Software Development",
+      "job_title": ".NET Developer",
+      "seniority": "Mid",
+      "match_strength": "weak",
+      "resume_style": "prose",
+      "resume": "Java developer with five years of experience building Spring services. Strong SQL and some exposure to Azure DevOps pipelines. Comfortable with Git and code review.",
+      "job_description": "Dotnet developer required. Must have C#, .NET and SQL. Azure experience is preferred.",
+      "expected_requirements": ["C#", ".NET", "SQL", "Azure"],
+      "expected_matched": ["SQL", "Azure"],
+      "expected_missing": ["C#", ".NET"],
+      "expected_alternative_groups": [],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "SQL": "Strong SQL",
+        "Azure": "Azure DevOps pipelines"
+      },
+      "expected_count": 4,
+      "notes": "Java does not satisfy C# or .NET; the stack is different."
+    },
+    {
+      "id": "SD-09",
+      "domain": "Software Development",
+      "job_title": "Machine Learning Engineer",
+      "seniority": "Mid",
+      "match_strength": "strong",
+      "resume_style": "prose",
+      "resume": "Machine learning engineer. Build models in Python and R programming, clean data with Pandas and NumPy, and ship Scikit-learn pipelines. Deployed a churn model to production.",
+      "job_description": "Machine learning engineer. Experience with Python or R programming is required. You will use Pandas, NumPy and Scikit-learn, and apply machine learning to production problems.",
+      "expected_requirements": ["Python or R", "Pandas", "NumPy", "Scikit-learn", "Machine Learning"],
+      "expected_matched": ["Python or R", "Pandas", "NumPy", "Scikit-learn", "Machine Learning"],
+      "expected_missing": [],
+      "expected_alternative_groups": [
+        {"label": "Python or R", "members": ["Python", "R"], "satisfied": true}
+      ],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "Python or R": "Python and R programming",
+        "Pandas": "Pandas and NumPy",
+        "NumPy": "Pandas and NumPy",
+        "Scikit-learn": "Scikit-learn pipelines",
+        "Machine Learning": "Machine learning engineer"
+      },
+      "expected_count": 5,
+      "notes": "Both alternatives are present, which must still satisfy one requirement only."
+    },
+    {
+      "id": "SD-10",
+      "domain": "Software Development",
+      "job_title": "Junior Web Developer",
+      "seniority": "Junior",
+      "match_strength": "weak",
+      "resume_style": "prose",
+      "resume": "Junior web developer. Built static pages with HTML and CSS. I react to feedback quickly and enjoy Excel at problem-solving. Looking for a first role in frontend development.",
+      "job_description": "Junior web developer. Required: JavaScript, HTML5, CSS3 and React or Vue.js. Excel skills are a plus for reporting tasks. You will work with senior developers, attend planning sessions and fix small bugs across the site.",
+      "expected_requirements": ["JavaScript", "HTML5", "CSS3", "React or Vue.js", "Excel"],
+      "expected_matched": ["HTML5", "CSS3"],
+      "expected_missing": ["JavaScript", "React or Vue.js", "Excel"],
+      "expected_alternative_groups": [
+        {"label": "React or Vue.js", "members": ["React", "Vue.js"], "satisfied": false}
+      ],
+      "expected_excluded": [],
+      "resume_negated_terms": [],
+      "ambiguous": [],
+      "unmeasured_requirements": [],
+      "evidence": {
+        "HTML5": "pages with HTML",
+        "CSS3": "pages with HTML and CSS"
+      },
+      "expected_count": 5,
+      "notes": "Two context traps: 'react to feedback' is not React experience, and 'Excel at problem-solving' is not spreadsheet experience."
+    }
+  ]
+}
