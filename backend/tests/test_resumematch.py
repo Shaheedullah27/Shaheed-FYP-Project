@@ -1397,6 +1397,138 @@ class AlternativeRequirementTests(unittest.TestCase):
                 self.assertEqual(result["keyword_coverage"], 100.0)
                 self.assertEqual(result["missing_keywords"], [])
 
+    def test_both_alternatives_are_one_satisfied_requirement(self):
+        job = "Experience with Python or R programming is required."
+        for resume in (
+            "Python and R programming developer.",
+            "R programming and Python developer.",
+        ):
+            with self.subTest(resume=resume):
+                result = analyze_keywords(resume, job)
+                self.assertEqual(result["job_keyword_count"], 1)
+                self.assertEqual(result["matched_keyword_count"], 1)
+                self.assertEqual(result["keyword_coverage"], 100.0)
+                self.assertEqual(
+                    [item["keyword"] for item in result["matched_keywords"]],
+                    ["Python or R"],
+                )
+                self.assertEqual(result["missing_keywords"], [])
+                # Both alternatives remain visible as resume evidence; only the
+                # requirement count is collapsed.
+                self.assertTrue(
+                    {"Python", "R"}.issubset(
+                        {item["keyword"] for item in result["resume_keywords"]}
+                    )
+                )
+
+    def test_both_react_and_angular_are_one_satisfied_requirement(self):
+        result = analyze_keywords(
+            "React and Angular frontend components.",
+            "React or Angular experience required.",
+        )
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 1)
+        self.assertEqual(result["keyword_coverage"], 100.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["matched_keywords"]],
+            ["React or Angular"],
+        )
+        self.assertEqual(result["missing_keywords"], [])
+
+    def test_alternatives_in_different_resume_sections_count_once(self):
+        resume = (
+            "SUMMARY\nFrontend engineer with React experience.\n"
+            "SKILLS\nAngular, TypeScript, SQL.\n"
+            "EXPERIENCE\nBuilt React and Angular dashboards."
+        )
+        result = analyze_keywords(resume, "React or Angular experience required.")
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 1)
+        self.assertEqual(result["keyword_coverage"], 100.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["matched_keywords"]],
+            ["React or Angular"],
+        )
+
+    def test_repeated_mentions_of_both_alternatives_do_not_inflate_the_count(self):
+        resume = (
+            "Python developer. Python services in production. "
+            "R programming for analysis. R programming dashboards."
+        )
+        result = analyze_keywords(resume, "Python or R programming required.")
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 1)
+        self.assertEqual(result["keyword_coverage"], 100.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["matched_keywords"]],
+            ["Python or R"],
+        )
+        self.assertGreaterEqual(
+            result["matched_keywords"][0]["resume_frequency"], 2
+        )
+
+    def test_negated_alternative_is_not_valid_evidence(self):
+        result = analyze_keywords(
+            "Python developer. No R programming experience.",
+            "Python or R programming required.",
+        )
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 1)
+        self.assertEqual(result["keyword_coverage"], 100.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["matched_keywords"]], ["Python"]
+        )
+        self.assertEqual(result["missing_keywords"], [])
+
+    def test_negated_alternatives_remain_one_missing_requirement(self):
+        result = analyze_keywords(
+            "No Python or R programming experience.",
+            "Python or R programming required.",
+        )
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 0)
+        self.assertEqual(result["keyword_coverage"], 0.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["missing_keywords"]],
+            ["Python or R"],
+        )
+
+    def test_negated_alternative_requirement_is_not_counted(self):
+        result = analyze_keywords(
+            "SQL developer.",
+            "Python or R programming is not required. SQL is required.",
+        )
+
+        self.assertEqual(result["job_keyword_count"], 1)
+        self.assertEqual(result["matched_keyword_count"], 1)
+        self.assertEqual(result["keyword_coverage"], 100.0)
+        self.assertEqual(
+            [item["keyword"] for item in result["matched_keywords"]], ["SQL"]
+        )
+        self.assertEqual(result["missing_keywords"], [])
+
+    def test_additive_and_alternative_requirements_are_counted_separately(self):
+        job = "Python or R programming and SQL required."
+
+        both = analyze_keywords("Python, R programming and SQL.", job)
+        self.assertEqual(both["job_keyword_count"], 2)
+        self.assertEqual(both["matched_keyword_count"], 2)
+        self.assertEqual(both["keyword_coverage"], 100.0)
+        self.assertEqual(both["missing_keywords"], [])
+
+        partial = analyze_keywords("Python developer.", job)
+        self.assertEqual(partial["job_keyword_count"], 2)
+        self.assertEqual(partial["matched_keyword_count"], 1)
+        self.assertEqual(partial["keyword_coverage"], 50.0)
+        self.assertEqual(
+            [item["keyword"] for item in partial["missing_keywords"]], ["SQL"]
+        )
+
     def test_unsatisfied_alternative_is_one_missing_requirement(self):
         result = analyze_keywords("Java developer.", "Python or R programming required.")
 
@@ -1469,8 +1601,13 @@ class AlternativeRequirementTests(unittest.TestCase):
         cases = [
             ("Python or R programming required.", "Python."),
             ("Python or R programming required.", "Java."),
+            ("Python or R programming required.", "Python and R programming."),
             ("Python and SQL required.", "Python."),
             ("React or Angular. Python or R programming.", "React and R programming."),
+            (
+                "React or Angular. Python or R programming.",
+                "React, Angular, Python and R programming.",
+            ),
         ]
         for job, resume in cases:
             with self.subTest(job=job, resume=resume):

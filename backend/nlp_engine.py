@@ -47,8 +47,8 @@ Two further distinctions are internal only and never change the API shape:
 * A job requirement can be *required*, *preferred* or *optional*. That level
   orders and phrases suggestions; it does not weight the coverage percentage.
 * Two requirements joined by ``or`` in the posting ("React or Angular") form one
-  alternative requirement. When the resume evidences one alternative, the
-  absent alternative is not counted as an additional gap.
+  alternative requirement: the posting offered a choice, so the group counts
+  once whether the resume evidences one alternative, both or neither.
 """
 
 import json
@@ -368,6 +368,10 @@ _LIST_CONNECTORS = frozenset({
     "and", "or", "nor", "as", "well", "both", "either", "including",
 })
 
+# Connectors that can join the two sides of an explicit alternative, so a
+# trailing "... are not required" can be unwound across them.
+_ALTERNATIVE_CONNECTORS = frozenset({"or", "nor"})
+
 # Hard cap so a long sentence cannot turn into an unbounded negation scope.
 _NEGATION_SCOPE_LIMIT = 12
 
@@ -515,9 +519,10 @@ def _negated_token_indices(
         index = max(cursor, index + 1)
 
     # A list can also be negated after the fact: "Kubernetes, Docker and AWS
-    # are not required". Only a comma-separated list is unwound backwards; a
-    # sentence such as "Kubernetes is used here and Docker is not required"
-    # stops at "here" and therefore keeps Kubernetes positive.
+    # are not required". Only a comma-separated list, or the two sides of an
+    # explicit "A or B" choice, is unwound backwards; a sentence such as
+    # "Kubernetes is used here and Docker is not required" stops at "here" and
+    # therefore keeps Kubernetes positive.
     for index, token in enumerate(tokens):
         if token not in _NEGATION_WORDS:
             continue
@@ -531,19 +536,37 @@ def _negated_token_indices(
 
         cursor = index - 1
         content_seen = 0
-        seen_comma = False
+        seen_list_mark = False
         while cursor >= 0 and cursor + 1 not in boundary_before:
             candidate = tokens[cursor]
             if candidate in _CLAUSE_BOUNDARY_WORDS:
                 break
             if candidate in _REQUIREMENT_CLOSERS:
                 break
-            if candidate in _NEGATION_FILLERS or candidate in _LIST_CONNECTORS:
+            if candidate in _NEGATION_FILLERS:
                 cursor -= 1
                 continue
-            seen_comma = seen_comma or cursor in comma_before
-            if content_seen and not seen_comma:
-                break
+            if candidate in _ALTERNATIVE_CONNECTORS:
+                # "Python or R programming is not required" negates the whole
+                # alternative requirement, not only its final alternative.
+                seen_list_mark = True
+                cursor -= 1
+                continue
+            if candidate in _LIST_CONNECTORS:
+                cursor -= 1
+                continue
+            if content_seen and not seen_list_mark:
+                # "Kubernetes, Docker and AWS are not required" keeps unwinding
+                # through the comma-separated list. "Python or R programming
+                # is not required" needs the connector that joins the pair:
+                # scanning backwards reaches the final alternative first.
+                if cursor in comma_before:
+                    seen_list_mark = True
+                elif cursor > 0 and tokens[cursor - 1] in _ALTERNATIVE_CONNECTORS:
+                    seen_list_mark = True
+                else:
+                    break
+            seen_list_mark = seen_list_mark or cursor in comma_before
             negated.add(cursor)
             content_seen += 1
             cursor -= 1
@@ -788,12 +811,17 @@ def _keyword_records(
     Frequencies are the number of surviving mentions, but coverage only asks
     whether a keyword is present at all, so repeated mentions never inflate it.
 
-    An alternative group ("React or Angular") is one requirement:
+    An alternative group ("React or Angular") is one requirement, because the
+    posting expressed one requirement with alternatives. Neither side is ever
+    listed as a separate job requirement, so the denominator stays one however
+    much evidence the resume contains:
 
-    * when either side is evidenced, only the evidenced side is counted and the
-      absent alternative is not reported as an additional gap;
-    * when neither side is evidenced, one synthetic "React or Angular" record
-      represents the group, so the gap is not counted twice.
+    * when exactly one side is evidenced, that side is counted and the absent
+      alternative is not reported as a gap;
+    * when both sides are evidenced, one synthetic "React or Angular" record is
+      counted as the single satisfied requirement, instead of two;
+    * when neither side is evidenced, the same synthetic record represents the
+      single gap.
 
     Every other requirement keeps the one-entry-one-requirement rule.
     """
@@ -802,27 +830,38 @@ def _keyword_records(
     categories = _category_by_name()
 
     for first_name, second_name in alternative_groups:
-        matched = [
-            name for name in (first_name, second_name)
-            if resume_spans.get(name)
-        ]
-        if not matched:
-            category = categories.get(first_name, "General")
-            job_frequency = len(job_spans.get(first_name, ())) + len(
-                job_spans.get(second_name, ())
-            )
+        first_mentions = resume_spans.get(first_name, ())
+        second_mentions = resume_spans.get(second_name, ())
+        removed.update((first_name, second_name))
+
+        if first_mentions and second_mentions:
+            # Both alternatives were used, but the posting asked for one of
+            # them. Reporting both would count one requirement twice and inflate
+            # the denominator the moment the resume happens to cover both.
             synthetic.append(
                 _keyword_record(
                     name=f"{first_name} or {second_name}",
-                    category=category,
-                    job_frequency=job_frequency,
+                    category=categories.get(first_name, "General"),
+                    job_frequency=len(job_spans.get(first_name, ()))
+                    + len(job_spans.get(second_name, ())),
+                    resume_frequency=len(first_mentions) + len(second_mentions),
+                )
+            )
+        elif first_mentions or second_mentions:
+            # Exactly one side satisfies the requirement. Keep the evidenced
+            # keyword so the matched list names the actual evidence.
+            evidenced = first_name if first_mentions else second_name
+            removed.discard(evidenced)
+        else:
+            synthetic.append(
+                _keyword_record(
+                    name=f"{first_name} or {second_name}",
+                    category=categories.get(first_name, "General"),
+                    job_frequency=len(job_spans.get(first_name, ()))
+                    + len(job_spans.get(second_name, ())),
                     resume_frequency=0,
                 )
             )
-            removed.update((first_name, second_name))
-        elif len(matched) == 1:
-            absent = second_name if matched[0] == first_name else first_name
-            removed.add(absent)
 
     job_keywords: List[Dict[str, Any]] = []
     resume_keywords: List[Dict[str, Any]] = []
