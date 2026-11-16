@@ -1,0 +1,813 @@
+{
+  "name": "ResumeMatch Audited Evaluation Dataset (TEMPLATE)",
+  "version": "0.0.0-template",
+  "created": "2026-11-16",
+  "status": "TEMPLATE_NOT_VALIDATED",
+  "description": "Template for a human-audited version of the evaluation dataset. This file contains no human labels and must not be used as an evaluation dataset until every adjudication field is completed and the audited per-domain files exist.",
+  "source_dataset": "evaluation_dataset.json",
+  "provisional_results": "evaluation_results.json",
+  "human_review_completed": false,
+  "human_review": {
+    "reviewer_1_completed": false,
+    "reviewer_2_completed": false,
+    "blind_review_completed": false,
+    "agreement_computed": false,
+    "cohens_kappa": null,
+    "adjudication_completed": false,
+    "completion_date": null
+  },
+  "synthetic": true,
+  "synthetic_statement": "All resumes and job descriptions in this dataset are synthetic examples written for evaluation. They are not scraped vacancies, real applicants, or hiring outcomes, and they do not represent the job market. They are realistic in structure and vocabulary but were created to exercise the documented behaviours of the system.",
+  "annotator": "PENDING HUMAN AUDIT. No human labels exist in this file. The provisional labels remain the AI-drafted labels in the source dataset.",
+  "annotation_independence": "To be completed only by the project author after the documented human audit and adjudication procedure.",
+  "second_review": "Not performed at template creation. Record the second reviewer and the computed agreement here only after both blind reviews are complete.",
+  "annotation_date": null,
+  "dictionary_entries_at_annotation": 182,
+  "domains": [
+    {
+      "name": "Software Development",
+      "file": "audited_dataset/01_software_development.json",
+      "pairs": 10
+    },
+    {
+      "name": "Digital Marketing",
+      "file": "audited_dataset/02_digital_marketing.json",
+      "pairs": 10
+    },
+    {
+      "name": "Graphic Design / UI-UX",
+      "file": "audited_dataset/03_graphic_design_uiux.json",
+      "pairs": 10
+    },
+    {
+      "name": "Data Analysis",
+      "file": "audited_dataset/04_data_analysis.json",
+      "pairs": 10
+    },
+    {
+      "name": "Human Resources",
+      "file": "audited_dataset/05_human_resources.json",
+      "pairs": 10
+    },
+    {
+      "name": "Finance / Accounting",
+      "file": "audited_dataset/06_finance_accounting.json",
+      "pairs": 10
+    },
+    {
+      "name": "Business & Administration",
+      "file": "audited_dataset/07_business_administration.json",
+      "pairs": 10
+    }
+  ],
+  "totals": {
+    "domains": 7,
+    "pairs": 70
+  },
+  "annotation_policy": [
+    "A dictionary term is an expected job requirement when the posting asks the candidate for that capability, names it as required/preferred/optional, or describes a core duty that clearly needs it.",
+    "A term named only as company context, a negation, or incidental prose unrelated to what the candidate must bring is excluded or recorded as ambiguous.",
+    "Terms that a human reader would consider requirements but that lie outside the 182-entry dictionary are recorded under unmeasured_requirements and excluded from keyword metrics; they are reported separately as a measurement limit.",
+    "A term whose requirement status is genuinely unclear is recorded under ambiguous and excluded from all metrics rather than forced into matched or missing.",
+    "Two alternatives joined by exactly 'or' (A or B) are one logical requirement. The group is a single label ('A or B'); individual alternatives are not separate requirements.",
+    "Repetition of a term in either document never creates additional requirements.",
+    "A resume mention is evidence only when it reads as genuine experience. Homographs, negated mentions, learning-only mentions and unrelated uses are not evidence.",
+    "Requirement importance (required / preferred / optional) does not change the requirement set: coverage in the existing system counts all recognised job requirements."
+  ],
+  "label_fields": {
+    "expected_requirements": "Logical requirements a human annotator sees in the posting, using canonical dictionary names. An alternative group appears as one 'A or B' label.",
+    "expected_matched": "Requirements the annotated resume genuinely evidences.",
+    "expected_missing": "Requirements the annotated resume does not evidence.",
+    "expected_alternative_groups": "Groups with their member terms and whether the resume satisfies the group.",
+    "expected_excluded": "Terms that must not count as job requirements (for example, explicitly negated in the posting), with the source and reason.",
+    "resume_negated_terms": "Terms the resume negates, so they must not count as matched evidence.",
+    "ambiguous": "Terms excluded from metrics because the annotation itself is genuinely uncertain.",
+    "unmeasured_requirements": "Human-identified requirements outside the dictionary; excluded from keyword metrics and from expected_count so that the count metric stays dictionary-scoped. They are reported separately as the dictionary ceiling.",
+    "evidence": "Short quoted or paraphrased evidence for every expected matched requirement.",
+    "expected_count": "Number of logical dictionary-representable requirements, with each alternative group counted once. Out-of-dictionary requirements are listed separately and are not included here."
+  },
+  "known_dataset_limitations": [
+    "Seventy synthetic pairs are sufficient for a transparent course-project benchmark, not for claims about the labour market or universal ATS accuracy.",
+    "The labels are single-annotator. No inter-annotator agreement statistic can be reported.",
+    "Labels use canonical dictionary names so that keyword-level comparison is possible; this makes dictionary coverage part of the evaluation boundary.",
+    "Some labels deliberately test edge cases (negation, context traps, alternatives, learning-only mentions) and are not a random sample of postings.",
+    "The dataset is small enough that one pair can move a domain percentage by several points.",
+    "Nine human-identified requirements (for example Storybook, Airflow, Workday, Anaplan) are outside the dictionary. They are recorded per pair as unmeasured_requirements and are excluded from keyword metrics; the report shows the resulting dictionary ceiling separately.",
+    "The dataset intentionally includes dictionary-consistent vocabulary so that keyword-level labels can be compared. This makes the detection figures optimistic relative to an unrestricted crawl of real postings.",
+    "Audited labels do not exist until both blind reviews and adjudication are complete.",
+    "This template must not be loaded by the evaluation runner."
+  ],
+  "audit_register": [
+    {
+      "pair_id": "SD-01",
+      "domain": "Software Development",
+      "job_title": "Junior Backend Developer",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-02",
+      "domain": "Software Development",
+      "job_title": "Frontend Engineer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-03",
+      "domain": "Software Development",
+      "job_title": "Full Stack Developer",
+      "provisional_expected_count": 7,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-04",
+      "domain": "Software Development",
+      "job_title": "Senior DevOps Engineer",
+      "provisional_expected_count": 7,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-05",
+      "domain": "Software Development",
+      "job_title": "QA Automation Engineer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-06",
+      "domain": "Software Development",
+      "job_title": "Mobile Developer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-07",
+      "domain": "Software Development",
+      "job_title": "Data Platform Engineer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-08",
+      "domain": "Software Development",
+      "job_title": ".NET Developer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-09",
+      "domain": "Software Development",
+      "job_title": "Machine Learning Engineer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "SD-10",
+      "domain": "Software Development",
+      "job_title": "Junior Web Developer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-01",
+      "domain": "Digital Marketing",
+      "job_title": "SEO Specialist",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-02",
+      "domain": "Digital Marketing",
+      "job_title": "Paid Media Buyer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-03",
+      "domain": "Digital Marketing",
+      "job_title": "Email Marketing Manager",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-04",
+      "domain": "Digital Marketing",
+      "job_title": "Social Media Coordinator",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-05",
+      "domain": "Digital Marketing",
+      "job_title": "Marketing Manager",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-06",
+      "domain": "Digital Marketing",
+      "job_title": "Performance Marketing Specialist",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-07",
+      "domain": "Digital Marketing",
+      "job_title": "Content Strategist",
+      "provisional_expected_count": 2,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-08",
+      "domain": "Digital Marketing",
+      "job_title": "Marketing Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-09",
+      "domain": "Digital Marketing",
+      "job_title": "E-commerce Marketing Executive",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DM-10",
+      "domain": "Digital Marketing",
+      "job_title": "Digital Marketing Assistant",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-01",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Product Designer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-02",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Brand Designer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-03",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Motion Designer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-04",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Visual Designer",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-05",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "UX Researcher",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-06",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Junior Graphic Designer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-07",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Web Designer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-08",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Graphic Designer",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-09",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Art Director",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "GD-10",
+      "domain": "Graphic Design / UI-UX",
+      "job_title": "Digital Product Designer",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-01",
+      "domain": "Data Analysis",
+      "job_title": "Business Data Analyst",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-02",
+      "domain": "Data Analysis",
+      "job_title": "Data Analyst",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-03",
+      "domain": "Data Analysis",
+      "job_title": "BI Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-04",
+      "domain": "Data Analysis",
+      "job_title": "Analytics Engineer",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-05",
+      "domain": "Data Analysis",
+      "job_title": "Junior Reporting Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-06",
+      "domain": "Data Analysis",
+      "job_title": "Insights Analyst",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-07",
+      "domain": "Data Analysis",
+      "job_title": "Data Scientist",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-08",
+      "domain": "Data Analysis",
+      "job_title": "Data Analyst",
+      "provisional_expected_count": 2,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-09",
+      "domain": "Data Analysis",
+      "job_title": "Analytics Manager",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "DA-10",
+      "domain": "Data Analysis",
+      "job_title": "Data Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-01",
+      "domain": "Human Resources",
+      "job_title": "Recruiter",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-02",
+      "domain": "Human Resources",
+      "job_title": "HR Generalist",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-03",
+      "domain": "Human Resources",
+      "job_title": "Learning and Development Specialist",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-04",
+      "domain": "Human Resources",
+      "job_title": "HR Coordinator",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-05",
+      "domain": "Human Resources",
+      "job_title": "HR Operations Assistant",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-06",
+      "domain": "Human Resources",
+      "job_title": "Payroll Officer",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-07",
+      "domain": "Human Resources",
+      "job_title": "Talent Acquisition Lead",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-08",
+      "domain": "Human Resources",
+      "job_title": "Payroll Specialist",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-09",
+      "domain": "Human Resources",
+      "job_title": "HR Business Partner",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "HR-10",
+      "domain": "Human Resources",
+      "job_title": "HR Intern",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-01",
+      "domain": "Finance / Accounting",
+      "job_title": "Financial Analyst",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-02",
+      "domain": "Finance / Accounting",
+      "job_title": "Accountant",
+      "provisional_expected_count": 6,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-03",
+      "domain": "Finance / Accounting",
+      "job_title": "Auditor",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-04",
+      "domain": "Finance / Accounting",
+      "job_title": "Accounts Payable Clerk",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-05",
+      "domain": "Finance / Accounting",
+      "job_title": "Tax Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-06",
+      "domain": "Finance / Accounting",
+      "job_title": "Bookkeeper",
+      "provisional_expected_count": 3,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-07",
+      "domain": "Finance / Accounting",
+      "job_title": "Finance Assistant",
+      "provisional_expected_count": 2,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-08",
+      "domain": "Finance / Accounting",
+      "job_title": "Accounts Assistant",
+      "provisional_expected_count": 2,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-09",
+      "domain": "Finance / Accounting",
+      "job_title": "Cost Accountant",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "FA-10",
+      "domain": "Finance / Accounting",
+      "job_title": "Graduate Finance Analyst",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-01",
+      "domain": "Business & Administration",
+      "job_title": "Project Coordinator",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-02",
+      "domain": "Business & Administration",
+      "job_title": "Business Analyst",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-03",
+      "domain": "Business & Administration",
+      "job_title": "Operations Manager",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-04",
+      "domain": "Business & Administration",
+      "job_title": "Administrative Assistant",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-05",
+      "domain": "Business & Administration",
+      "job_title": "Agile Project Manager",
+      "provisional_expected_count": 4,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-06",
+      "domain": "Business & Administration",
+      "job_title": "Business Development Executive",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-07",
+      "domain": "Business & Administration",
+      "job_title": "Project Manager",
+      "provisional_expected_count": 2,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-08",
+      "domain": "Business & Administration",
+      "job_title": "Product Owner",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-09",
+      "domain": "Business & Administration",
+      "job_title": "Strategy Associate",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    },
+    {
+      "pair_id": "BA-10",
+      "domain": "Business & Administration",
+      "job_title": "Business Operations Associate",
+      "provisional_expected_count": 5,
+      "audited_expected_count": null,
+      "audited_matched": null,
+      "audited_missing": null,
+      "adjudication_status": "pending"
+    }
+  ],
+  "integration": {
+    "audited_domain_directory": "evaluation/audited_dataset/",
+    "audited_output_directory": "evaluation/audited_results/",
+    "preserve": [
+      "evaluation/evaluation_dataset.json",
+      "evaluation/dataset/",
+      "evaluation/evaluation_results.json",
+      "evaluation/evaluation_report.md"
+    ],
+    "command": "backend/venv/Scripts/python.exe evaluation/evaluation_runner.py --dataset evaluation/audited_dataset.json --output-dir evaluation/audited_results"
+  }
+}
