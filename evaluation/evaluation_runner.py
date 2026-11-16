@@ -31,10 +31,12 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 EVAL_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = EVAL_DIR.parent
 BACKEND_DIR = PROJECT_ROOT / "backend"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from nlp_engine import analyze_full, load_skills_dictionary  # noqa: E402
+from backend.nlp_engine import analyze_full, load_skills_dictionary  # noqa: E402
 
 DEFAULT_DATASET = EVAL_DIR / "evaluation_dataset.json"
 DEFAULT_OUTPUT_DIR = EVAL_DIR
@@ -904,7 +906,7 @@ def consistency_checks(pairs: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     duplicated mention legitimately changes term frequency, so its delta is
     recorded rather than asserted.
     """
-    from parser import parse_uploaded_file
+    from backend.parser import parse_uploaded_file
 
     by_id = {pair["id"]: pair for pair in pairs}
     base_pair = by_id["SD-01"]
@@ -1006,7 +1008,7 @@ def consistency_checks(pairs: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     # Malformed input and the unchanged API response contract.
     api_checks: List[Dict[str, Any]] = []
     try:
-        from app import app
+        from backend.app import app
 
         app.config.update(TESTING=True)
         client = app.test_client()
